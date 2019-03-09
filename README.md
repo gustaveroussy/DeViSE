@@ -1,1 +1,2 @@
-# DeViSE
+# DeViSE: Detection and visualization of splicing events
+
