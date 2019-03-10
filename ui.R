@@ -156,9 +156,11 @@ body <-  dashboardBody(
     )
 
     ),
-  HTML("<center> <h5 style='position: relative; bottom: 0; width:100%;'> <font color='black'> Please contact ADNANI Yahia <font color='blue'>  
-                             Yahia.ADNANI@gustaveroussy.fr </font> & bioinformatics team (BiGR) <font color='blue'>  
-                             pf-bioinfo@gustaveroussy.fr  </font> if you have any questions.</h5> </font> </center>")
+  HTML("   <center>
+           <img src= 'devise.svg'  height = '400'  width = '400' >
+           <br/><h4 style='position: relative; bottom: 0; width:100%;'> <font color='black'> Please contact ADNANI Yahia <font color='blue'>  
+           Yahia.ADNANI@gustaveroussy.fr </font> & bioinformatics team (BiGR) <font color='blue'>  
+           pf-bioinfo@gustaveroussy.fr  </font> if you have any questions.</h4> </font> </center>")
     )
   
   

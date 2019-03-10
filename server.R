@@ -278,8 +278,8 @@ shinyServer(
                         gene_transcript = input$select_transcript[1],
                         principalTranscript =input$select_principal_transcript,
                         transcriptList = input$select_transcript,
-                        groupJunctionsBy = "status"
-                        # cutoff_depth = cutoff_depth ,
+                        groupJunctionsBy = "status",
+                        cutoff_depth = input$cuttof_depth_plot 
                         # space_between_samples = space_between_samples,
                         # is.random_y =is.random_y 
           )

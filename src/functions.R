@@ -6,6 +6,7 @@ regtools="/usr/bin/regtools"
 develpped_by=HTML('
                                <body>
                                <p style="position: fixed; bottom: 0; width:100%;">
+                               <img src= "devise.svg"  height = "250"  width = "250" >
                                 <br/>
                                <a href="https://www.gustaveroussy.fr/fr/content/plateforme-de-bioinformatique-activit%C3%A9s" target="_blank">Developed by the bioinformatics team,
                                <br/> Institut Gustave Roussy - B2M, <br/>
@@ -387,6 +388,9 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
        
        i=t
        junction=junctions[[i]]
+       
+      if(nrow(junction)>0){
+        
        random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),random_y,1)
        
        if(groupJunctionsBy=="anchor"){
@@ -399,7 +403,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
          
        }
        
-       
+       print(junction)
        p=add_segments(p ,
                       x = junction$Start,
                       y = y_tickvals[i],
@@ -460,7 +464,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
        
      }
      
-     
+   }
    }
    
    
@@ -470,8 +474,9 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                   xend = unique(break_points),
                   yend = max(y_tickvals),
                   line = list(width = 1,color="red",dash=1),
-                  name="grid",
-                  showlegend=T
+                  name="Projection-grid",
+                  showlegend=T,
+                  visible="legendonly"
    )
    
    p=add_segments(p ,
