@@ -23,10 +23,9 @@ jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js meth
 header <- dashboardHeader(title = span(img(src = "logo.png", height = 45, width = 90), HTML("<b> DeViSE </b>")))
 
 ######################################### dashboardSidebar #######################################################
-sidebar= dashboardSidebar(disable = F,
+sidebar= dashboardSidebar(disable = T,
                           
                           develpped_by,
-                          
                           
                           sidebarMenu(id="tabs",
                                        menuItem("Junction calling", tabName="m1", icon =  icon("chart-line")),
@@ -35,9 +34,9 @@ sidebar= dashboardSidebar(disable = F,
                                       
                           )
 
-#############################################################################################################
+#################################################################################################################
 
-################################################## dashboardBody ############################################
+################################################## dashboardBody ################################################
 
 body <-  dashboardBody(
   
@@ -53,8 +52,24 @@ body <-  dashboardBody(
     
     tabItem(tabName = "m1",
             
+          div(id="login_ui",  
+            fluidRow(column(width=4, offset = 4,HTML('<h1 <b> DeViSE: Detection and Vizualisation of Splicing Events</b> </h1>'))
+                     ,
+                     column(width=4, offset = 4,h4("Sign in:"),
+                            wellPanel(id = "login",
+                                      textInput(".username", "Username:"),
+                                      passwordInput(".password", "Password:"),
+                                      div(actionButton(".login", "Log in",icon = icon("sign-in")), style="text-align: center;back"),
+                                      textOutput("message"),
+                                      tags$head(tags$style("#message{color: red;}")
+                                      )
+                            )
+                     ))
+            ),
               
-               fluidRow( 
+              hidden(
+                div(id="application",
+                fluidRow( 
                         box(icon=icon('list'),
                         title =HTML('<h1> <font color="black"><b> Junction calling from bams</b> </font> </h1> '),
                         status="danger",
@@ -77,7 +92,7 @@ body <-  dashboardBody(
                     )
                     )
                
-              
+                ))
               ),
     
     tabItem(tabName = "m2",
@@ -167,7 +182,7 @@ body <-  dashboardBody(
 
     ),
   HTML("   <center>
-           <img src= 'devise.svg'  height = '400'  width = '400' >
+           <img src= 'devise.svg'  height = '300'  width = '300' >
            <br/><h4 style='position: relative; bottom: 0; width:100%;'> <font color='black'> Please contact ADNANI Yahia <font color='blue'>  
            Yahia.ADNANI@gustaveroussy.fr </font> & bioinformatics team (BiGR) <font color='blue'>  
            pf-bioinfo@gustaveroussy.fr  </font> if you have any questions.</h4> </font> </center>")

@@ -50,6 +50,22 @@ shinyServer(
   ########## update annotations files ----------------------------------------------------------------------------------
     observe({
       
+      
+      
+      observeEvent(input$.login,{
+        
+        shinyjs::removeClass(selector = "body", class = "sidebar-collapse")
+        shinyjs::show(id = "application", anim = F)
+        shinyjs::hide(id = "login_ui", anim = F)
+        
+        
+      })
+      
+      
+      
+      
+      
+      
       gtf_list=list.files("data/appData/public_annotation",pattern = ".gtf",full.names = T)
       
       if(length(gtf_list)>0){
@@ -142,7 +158,7 @@ shinyServer(
          progress$set(message = 'In progress ...')
          progress$set(value = 100)
          shinyjs::showElement("results_output")
-         shinyjs::showElement(id="vis-viz_plot")
+         output$plot_junct=renderUI(br())
          analyse$name=input$select_analysis
          analyse$path=paste0("data/usersData/results/",input$select_analysis)
          analyse$junctions=aggregate_junctions(paste0(analyse$path,"/junctions_calling"),dir_analysis=analyse$path,cutoff = input$cuttof_depth)

@@ -6,7 +6,7 @@ regtools="/usr/bin/regtools"
 develpped_by=HTML('
                                <body>
                                <p style="position: fixed; bottom: 0; width:100%;">
-                               <img src= "devise.svg"  height = "250"  width = "250" >
+                               <img src= "devise.svg"  height = "200"  width = "200" >
                                 <br/>
                                <a href="https://www.gustaveroussy.fr/fr/content/plateforme-de-bioinformatique-activit%C3%A9s" target="_blank">Developed by the bioinformatics team,
                                <br/> Institut Gustave Roussy - B2M, <br/>
