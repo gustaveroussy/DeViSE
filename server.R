@@ -22,6 +22,7 @@ source("src/functions.R")
 
 GTFs=reactiveValues(values=NULL)
 analyse=reactiveValues(name=NULL,junctions=NULL)
+finished_analysis=reactiveValues(name=NULL)
 hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons_default.rds"),
                 union=readRDS("data/appData/public_annotation/gencodeV19_exons_union.rds"))
 ###### End reactive Values ---------------------------------------------------------------------------------------------
@@ -65,7 +66,7 @@ shinyServer(
     
     observeEvent(input$lunch_juncCalling,{
       
-      message=message_JunCalling(input$input_bams,input$analysis_name)
+      message=message_JunCalling(input$input_bams,trim(input$analysis_name))
       
       if(message!=""){
         
@@ -73,7 +74,7 @@ shinyServer(
         alert(message$text)
       
       }else{
-        
+        finished_analysis$name= trim(input$analysis_name)
         nbr_bams=length(input$input_bams$datapath)
         progress <- shiny::Progress$new(session, min=0, max=nbr_bams)
         on.exit(progress$close())
@@ -87,7 +88,7 @@ shinyServer(
         dir.create(out_dir,recursive = T)
         
         for (i in 1:nbr_bams) {
-          
+
           progress$set(message = paste0('Junction calling in  progress ...(',round(i/nbr_bams*100,0),'%)'),
                        detail = paste0(input$input_bams$name[i]," ..."))
           progress$set(value = i)
@@ -103,17 +104,31 @@ shinyServer(
                      " -o ", out,"/2-junc/portcullis_all.junctions_annotated.tab" )
 
           print(cmd)
-          system(cmd,wait = T,ignore.stdout = T)          
+          system(cmd,wait = T,ignore.stdout = T)
         }
-        
 
-        
-        # output$message_junction_calling=renderUI(message$html)
+        aggregate_junctions(out_dir,dir_analysis,cutoff = 0)
+        output$message_junction_calling=renderUI({
+                                                 column(12,HTML("<h2><b><font color='green'>
+                                                           Your analysis is successfully completed
+                                                           </b></font></h2>"),
+                                                     actionButton(inputId = "go_to_analyse",
+                                                                  label = HTML("<b>GO TO THE DETAILS OF THE ANALYZES</b>"),
+                                                                  class="btn btn-success",
+                                                                  icon = icon("arrow-alt-circle-right"))
+                                                     
+                                                     )
+                                                 })
         
         
       }
  
        
+    })
+    
+    observeEvent(input$go_to_analyse,{
+      updateTabItems(session, "tabs", selected = "m2")
+      updateSelectInput(session = session,inputId = "select_analysis",choices = getFinishedAnalysis(),selected = finished_analysis$name )
     })
     
 ############## ----------------------------------------------------------------------------------------------------------
@@ -127,6 +142,7 @@ shinyServer(
          progress$set(message = 'In progress ...')
          progress$set(value = 100)
          shinyjs::showElement("results_output")
+         shinyjs::showElement(id="vis-viz_plot")
          analyse$name=input$select_analysis
          analyse$path=paste0("data/usersData/results/",input$select_analysis)
          analyse$junctions=aggregate_junctions(paste0(analyse$path,"/junctions_calling"),dir_analysis=analyse$path,cutoff = input$cuttof_depth)
@@ -267,10 +283,11 @@ shinyServer(
 ##### Plotly ------------------------------------------------------------------------------------------------------------
     
     observeEvent(input$plot_junction_btn,{
-
+       
 
       if(!is.null(input$select_samples) && length(input$select_samples)!=0 && input$select_samples!=""){
-
+        showElement(id = "viz_plot",anim = T)
+        output$plot_junct=renderUI(shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = 800)))
         p=viz_junctions(junctions =analyse$junctions,
                         samples =input$select_samples,
                         exonGTF = hg19_exons ,

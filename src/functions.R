@@ -153,23 +153,38 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
  }
  
  
- 
+ gettextFromdataframe=function(data){
+   
+   res=c()
+   
+   for (i in 1:nrow(data)) {
+     text=""
+     for (col in colnames(data)) {
+       text=paste0(text,"\n<b>",col,": </b>",data[[col]][i])
+     }
+     res=c(res,text)
+   }
+   
+   return(res)
+   
+   
+ } 
  
  getcolorFromgroup=function(x,by="anchor"){
    
    if(by=="anchor"){
      
-     colors=rep("#a80000",length(x))
+     colors=rep("#999999",length(x))
      names(colors)=x
-     colors[x=="A"]="#965c00"
-     colors[x=="D"]="#0769ba"
-     colors[x=="DA"]="#2a7a02"
-     colors[x=="N"]="#2a7a02"
+     colors[x=="A"]="#A65628"
+     colors[x=="D"]="#984EA3"
+     colors[x=="DA"]="#377EB8"
+     colors[x=="N"]="#E41A1C"
      
    }else{
-     colors=rep("red",length(x))
+     colors=rep("#e41a1c",length(x))
      names(colors)=x
-     colors[x=="knwon"]="#8a31e2"
+     colors[x=="knwon"]="#999999"
    }
    
    return(colors)
@@ -177,11 +192,13 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
  }
  
  generate_colors=function(n=2){
-   color = grDevices::colors()
-   return(col=sample(color, n))
+   require(RColorBrewer)
+   color = brewer.pal(9, "Set1")
+   color=rep(color[-6],n)
+   return(color[1:n])
  }
  
- get_exonFrom_transcrip=function(exons,transcript,gene){
+ get_exonFrom_transcript=function(exons,transcript,gene){
    
    gene_id=exons$gene_id[str_detect(exons$transcript_id,transcript)]
    gene_id=gene_id[1]
@@ -206,6 +223,9 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                      Depth=junctions[[sample]],
                      Transcript=junctions$transcripts,
                      status=junctions$`known junction`,
+                     acceptors_skipped=junctions$`acceptors skipped`,
+                     exons_skipped=junctions$`exons skipped`,
+                     donors_skipped=junctions$`donors skipped`,
                      anchor=junctions$anchor)
           
    )
@@ -227,11 +247,11 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    space_between_samples=5,
    is.random_y=T
  ){
-   #####--------------------------------------------------------------------------------------
+   #####--------------------------------------------------------------------------------------------------------------------------------------------------
    
-   ###Preparation --------------------------------------------------------------------------------
-   exonsTranscripts=get_exonFrom_transcrip(exonGTF$default,gene_transcript,gene)
-   exonsUnion=get_exonFrom_transcrip(exonGTF$union,gene_transcript,gene)
+   ###Preparation ----------------------------------------------------------------------------------------------------------------------------------------
+   exonsTranscripts=get_exonFrom_transcript(exonGTF$default,gene_transcript,gene)
+   exonsUnion=get_exonFrom_transcript(exonGTF$union,gene_transcript,gene)
    exonsUnion$transcript="Merged_transcripts"
    exonsTranscripts=rbind(exonsTranscripts,exonsUnion)
    exonsTranscripts=exonsTranscripts[exonsTranscripts$transcript %in% c(transcriptList,principalTranscript), ]
@@ -321,6 +341,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    ################## plots transcripts Exons ------------------------------------------------------------------------------------------------------------------------
    
    exons_colors=generate_colors(length(y_ticktext))
+   # exons_colors=c(rep("#629158",length(transcriptList)),rep("#56b7ad",length(samples)))
    names(exons_colors)=c(transcriptList,samples)
    break_points=c()
    for (t in rev(c(transcriptList,samples))) {
@@ -403,7 +424,6 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
          
        }
        
-       print(junction)
        p=add_segments(p ,
                       x = junction$Start,
                       y = y_tickvals[i],

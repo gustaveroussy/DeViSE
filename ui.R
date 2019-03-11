@@ -120,8 +120,7 @@ body <-  dashboardBody(
                           downloadButton(outputId = "download_unknwon_junction_bis",label = "Download unknwon junctions"))
                         
                   ),
-                  box(icon=icon('eye'),
-                      title = HTML('<h3> <font color="black"><b> Junctions vizualisation </b> </font> </h3> '),
+                  box(title = HTML('<h3> <font color="black"><b> Junctions vizualisation </b> </font> </h3> '),
                       status="danger",
                       collapsible = T,
                       width = 12,
@@ -138,14 +137,25 @@ body <-  dashboardBody(
                              column(width = 6,selectInput(inputId ="select_transcript",multiple = T,label = "Select other transcripts",choices =""))
                              
                       ),
+                      box(icon=icon('eye'),
+                          title = "Graphic settings",
+                          status="danger",
+                          collapsible = T,
+                          solidHeader = T,
+                          width = 12,
+                          collapsed = T,
+                          column(width =12,
+                                 column(width = 6,numericInput(inputId ="Plot_height",label = "Plot height",value=500, min = 200, max = NA, step = 10))
+                                 
+                          )
+                          ),
                       actionButton(inputId = "plot_junction_btn","Submit",icon = icon("run")),
                       tags$style("button#plot_junction_btn {background-color:#d85252; padding: 5px 25px;
                                    font-family:Andika, Arial, sans-serif; font-size:1.5em;  letter-spacing:0.05em; text-transform:uppercase ;color:#fff;
                                    text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
                       helpText("Click on the button to plot the junction graph."),
-                      shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = 800))
-                      
-            
+                      uiOutput("plot_junct")
+                      # shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = 800))
                       
                   )
                   )
