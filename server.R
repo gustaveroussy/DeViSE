@@ -21,7 +21,7 @@ source("src/functions.R")
 ########### Reactive values --------------------------------------------------------------------------------------------
 
 GTFs=reactiveValues(values=NULL)
-analyse=reactiveValues(name=NULL,junctions=NULL)
+analyse=reactiveValues(name=NULL,junctions=NULL,current_transcript=NULL)
 finished_analysis=reactiveValues(name=NULL)
 hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons_default.rds"),
                 union=readRDS("data/appData/public_annotation/gencodeV19_exons_union.rds"))
@@ -38,33 +38,57 @@ hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons
 #    }
 #  })
 
-###### END observe docker ----------------------------------------------------------------------------------------------
+###### END observe docker --------------------------------------------------------------------------------------------------------
 
 
 
 
-# SERVER FUNCTION ------------------------------------------------------------------------------------------------------
+# SERVER FUNCTION ----------------------------------------------------------------------------------------------------------------
+
 shinyServer(
   function(input, output, session) {
-
-  ########## update annotations files ----------------------------------------------------------------------------------
-    observe({
+    
+############################### login --------------------------------------------------------------------------------------------
+    
+    observeEvent(input$.login,{
       
+      logg=fromJSON(paste0("http://31.10.13.26:8080/Authentification/api/User?login=",input$.username,"&password=",input$.password))
       
-      
-      observeEvent(input$.login,{
+      if(logg$identification=="Successful identification"){
         
         shinyjs::removeClass(selector = "body", class = "sidebar-collapse")
         shinyjs::show(id = "application", anim = F)
         shinyjs::hide(id = "login_ui", anim = F)
-        
-        
-      })
+        output$user_profile=renderUI(
+          column(12,
+          actionLink("user_",HTML(paste0("<b><font color='black'>",input$.username)," </font><b>"),icon=icon("user")),
+          br(),
+          actionLink("sign_out",HTML("<b><font color='black'> Sign out </font><b>"),icon=icon("sign-out-alt "))
+          )
+        )
+      }else{
+        output$message=renderText(logg$identification)
+      }
       
+    })
+    
+    observeEvent(input$sign_out,{
+      updateTabItems(session, "tabs", selected = "m1")
+      shinyjs::addClass(selector = "body", class = "sidebar-collapse")
+      shinyjs::hide(id = "application", anim = F)
+      shinyjs::show(id = "login_ui", anim = F)
+      output$message=renderText("")
+      output$user_profile=renderUI("")
       
-      
-      
-      
+    })
+    
+  ######---------------------------------------------------------------------------------------------------------------
+    
+    
+    
+
+  ########## update annotations files ----------------------------------------------------------------------------------
+    observe({
       
       gtf_list=list.files("data/appData/public_annotation",pattern = ".gtf",full.names = T)
       
@@ -163,7 +187,7 @@ shinyServer(
          analyse$path=paste0("data/usersData/results/",input$select_analysis)
          analyse$junctions=aggregate_junctions(paste0(analyse$path,"/junctions_calling"),dir_analysis=analyse$path,cutoff = input$cuttof_depth)
          colnames(analyse$junctions)=str_replace_all(colnames(analyse$junctions),pattern = "_",replacement = " ")
-         updateSelectInput(session,inputId = "select_gene",choices = unique(analyse$junctions$genes))
+         updateSelectInput(session,inputId = "select_gene",choices = unique(analyse$junctions$genes[!str_detect(analyse$junctions$genes,pattern = ",")]))
          updateSelectInput(session,inputId = "select_samples",choices = colnames(analyse$junctions)[13:ncol(analyse$junctions)])
          output$DT_All_samples=renderDataTable({
            
@@ -222,12 +246,14 @@ shinyServer(
         
         transcripts=analyse$junctions$transcripts[analyse$junctions$genes==input$select_gene]
         transcripts=as.character(transcripts[!is.na(transcripts)])
-        
+      
         if(length(transcripts>0)){
+          
           transcripts=unlist(strsplit(transcripts,","))
           updateSelectInput(session,
                             inputId = "select_transcript",
                             choices = transcripts)
+          analyse$current_transcripts=transcripts
         }
       }
     }) 
@@ -301,20 +327,41 @@ shinyServer(
     observeEvent(input$plot_junction_btn,{
        
 
-      if(!is.null(input$select_samples) && length(input$select_samples)!=0 && input$select_samples!=""){
+      if(!is.null(input$select_samples) &&
+         length(input$select_samples)!=0 &&
+         input$select_samples!="" &&
+         !is.null(input$select_principal_transcript) &&
+         length(input$select_principal_transcript)!=0 &&
+         input$select_principal_transcript!="" &&
+         !is.null(input$select_transcript) &&
+         length(input$select_transcript)!=0 &&
+         input$select_transcript!=""
+         
+         ){
+        
         showElement(id = "viz_plot",anim = T)
-        output$plot_junct=renderUI(shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = 800)))
+       
+        output$plot_junct=renderUI(shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = input$Plot_height)))
+  
+        if(is.null(input$select_transcript)){
+          transcriptList=c()
+        }else{
+          transcriptList=input$select_transcript
+        }
+        
+        output$message_plot=renderText("")
+        
         p=viz_junctions(junctions =analyse$junctions,
                         samples =input$select_samples,
                         exonGTF = hg19_exons ,
                         gene = input$select_gene,
-                        gene_transcript = input$select_transcript[1],
+                        gene_transcript = analyse$current_transcripts[1],
                         principalTranscript =input$select_principal_transcript,
-                        transcriptList = input$select_transcript,
-                        groupJunctionsBy = "status",
-                        cutoff_depth = input$cuttof_depth_plot 
-                        # space_between_samples = space_between_samples,
-                        # is.random_y =is.random_y 
+                        transcriptList = transcriptList,
+                        groupJunctionsBy = input$groupby_status,
+                        cutoff_depth = input$cuttof_depth_plot,
+                        mutations =getMutationFromAnalysis(paste0("data/usersData/results/",analyse$name)), 
+                        random_y = input$disp_level
           )
         
         output$splice_graph=renderPlotly({
@@ -322,7 +369,7 @@ shinyServer(
         })
 
       }else{
-        alert("Oops !! Please select one or more samples .")
+        output$message_plot=renderText("Oops !! One or more inputs above are not reported")
       }
 
     })

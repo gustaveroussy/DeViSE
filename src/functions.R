@@ -1,12 +1,11 @@
 
 genomePath=paste0(getwd(),"/","data/appData/public_annotation/gencodeV19_dna.fa")
 portcullis="portcullis"
-regtools="/usr/bin/regtools"
+regtools="regtools"
 
 develpped_by=HTML('
                                <body>
                                <p style="position: fixed; bottom: 0; width:100%;">
-                               <img src= "devise.svg"  height = "200"  width = "200" >
                                 <br/>
                                <a href="https://www.gustaveroussy.fr/fr/content/plateforme-de-bioinformatique-activit%C3%A9s" target="_blank">Developed by the bioinformatics team,
                                <br/> Institut Gustave Roussy - B2M, <br/>
@@ -234,6 +233,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
  
 
 
+ 
  viz_junctions=function(
    junctions,
    samples=c("56531","42814","56970"),
@@ -244,12 +244,13 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    transcriptList,
    groupJunctionsBy="anchor",
    cutoff_depth=80,
+   mutations=NULL,
    space_between_samples=5,
-   is.random_y=T
+   random_y=0.3
  ){
-   #####--------------------------------------------------------------------------------------------------------------------------------------------------
+   ####--------------------------------------------------------------------------------------
    
-   ###Preparation ----------------------------------------------------------------------------------------------------------------------------------------
+   ###Preparation --------------------------------------------------------------------------------
    exonsTranscripts=get_exonFrom_transcript(exonGTF$default,gene_transcript,gene)
    exonsUnion=get_exonFrom_transcript(exonGTF$union,gene_transcript,gene)
    exonsUnion$transcript="Merged_transcripts"
@@ -257,10 +258,6 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    exonsTranscripts=exonsTranscripts[exonsTranscripts$transcript %in% c(transcriptList,principalTranscript), ]
    exonsTranscripts=exonsTranscripts[order(exonsTranscripts$start),]
    junctions=base::sapply(samples,get_junctionFromExons,junc=junctions[!is.na(junctions$genes),],gene=gene,cutoff=cutoff_depth,USE.NAMES = T,simplify = F)
-   
-   
-   
-   
    
    plot_bgcolor=''
    paper_bgcolor=''
@@ -274,10 +271,6 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
      bordercolor = "#FFFFFF",
      borderwidth = 2,
      orientation="v")
-   
-   
-   
-   
    
    ax <- list(
      showgrid = F,
@@ -332,16 +325,15 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
      layout(paper_bgcolor=paper_bgcolor) %>%
      layout(legend = legende)
    
-   if(is.random_y){
-     random_y=0.5 
-   }else{
-     random_y=1
-   }
-   
+   # if(is.random_y){
+   #   random_y=0.5 
+   # }else{
+   #   random_y=1
+   # }
+   # 
    ################## plots transcripts Exons ------------------------------------------------------------------------------------------------------------------------
    
    exons_colors=generate_colors(length(y_ticktext))
-   # exons_colors=c(rep("#629158",length(transcriptList)),rep("#56b7ad",length(samples)))
    names(exons_colors)=c(transcriptList,samples)
    break_points=c()
    for (t in rev(c(transcriptList,samples))) {
@@ -410,81 +402,91 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
        i=t
        junction=junctions[[i]]
        
-      if(nrow(junction)>0){
-        
-       random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),random_y,1)
-       
-       if(groupJunctionsBy=="anchor"){
-         colors=getcolorFromgroup(junction$anchor)
-         group=names(colors)
+       if(nrow(junction)>0){
          
-       }else{
-         colors=getcolorFromgroup(junction$status,by = "status")
-         group=names(colors)
+         random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),1-random_y,1)
+         
+         if(groupJunctionsBy=="anchor"){
+           colors=getcolorFromgroup(junction$anchor)
+           group=names(colors)
+           
+         }else{
+           colors=getcolorFromgroup(junction$status,by = "status")
+           group=names(colors)
+           
+         }
+         
+         p=add_segments(p ,
+                        x = junction$Start,
+                        y = y_tickvals[i],
+                        xend = (junction$Start+junction$End)/2,
+                        yend = random_y_pos,
+                        line = list(width = 2,color=colors),
+                        color=colors,
+                        legendgroup=paste(group,i),
+                        name=group,
+                        showlegend=T
+         )
+         p=add_segments(p ,
+                        x = (junction$Start+junction$End)/2,
+                        y =random_y_pos,
+                        xend = junction$End,
+                        yend = y_tickvals[i],
+                        line = list(width = 2,color=colors),
+                        color=colors,
+                        name=group,
+                        legendgroup=paste(group,i),
+                        showlegend=F
+         )
+         
+         
+         
+         p=add_text(p,x= (junction$Start+junction$End)/2,
+                    y=random_y_pos,
+                    textfont = list( size = 10,color="black"),
+                    text=junction$Depth,
+                    name=colors,
+                    legendgroup=paste(group,i),
+                    showlegend = F)
+         
+         p=add_markers(p,
+                       x = (junction$Start+junction$End)/2,
+                       y = random_y_pos,
+                       marker=list(symbol=14,
+                                   size=2,
+                                   color="blue"),
+                       legendgroup = paste(group,i),
+                       name=group,
+                       text=gettextFromdataframe(junction[,-5]),
+                       showlegend = F
+         )
+         
+         
          
        }
        
-       p=add_segments(p ,
-                      x = junction$Start,
-                      y = y_tickvals[i],
-                      xend = (junction$Start+junction$End)/2,
-                      yend = random_y_pos,
-                      line = list(width = 2,color=colors),
-                      color=colors,
-                      legendgroup=paste(group,i),
-                      name=group,
-                      showlegend=T
-       )
-       p=add_segments(p ,
-                      x = (junction$Start+junction$End)/2,
-                      y =random_y_pos,
-                      xend = junction$End,
-                      yend = y_tickvals[i],
-                      line = list(width = 2,color=colors),
-                      color=colors,
-                      name=group,
-                      legendgroup=paste(group,i),
-                      showlegend=F
-       )
-       
-       
-       
-       p=add_text(p,x= (junction$Start+junction$End)/2,
-                  y=random_y_pos,
-                  textfont = list( size = 10,color=colors),
-                  text=junction$Depth,
-                  name=colors,
-                  legendgroup=paste(group,i),
-                  showlegend = F)
-       
-       p=add_markers(p,
-                     x = (junction$Start+junction$End)/2,
-                     y = random_y_pos,
-                     marker=list(symbol=14,
-                                 size=2,
-                                 color=colors),
-                     legendgroup = paste(group,i),
-                     name=group,
-                     text=paste0("<b>chromosome: </b>",
-                                 junction$chromosome,
-                                 "\n<b>Start: </b>",
-                                 junction$Start,
-                                 "\n<b>End: </b>",
-                                 junction$End,
-                                 "\n<b>Depth(read number): </b>",
-                                 junction$Depth,
-                                 "\n<b>Known junction? : </b>",
-                                 junction$status,
-                                 "\n<b>Anchor: </b>",
-                                 junction$anchor),
-                     showlegend = F
-       )
-       
-       
+       if(!is.null(mutations)){
+         
+         events=mutations[mutations$sample==t,]
+         events=events[events$gene==gene,]
+         showlegend=T
+         
+         if(nrow(events)>0){
+           
+           for (mut in 1:nrow(events)) {
+             
+             mutation=events[mut,]
+             p=add_markers(p,x = c(mutation$start,mutation$end),y=y_tickvals[i],text=gettextFromdataframe(mutation),marker=list(color="red",symbol=20,size=10),name=paste0("DNA events (Mutations/Indels)"),showlegend=showlegend)
+             showlegend=F
+             if(mutation$start-mutation$end!=0){
+               p=add_segments(p ,x = mutation$start, y = y_tickvals[i], xend =  mutation$end, yend = y_tickvals[i], line = list(width = 2,color="red"),name=paste0("DNA events (Mutations/Indels)"))
+             }
+             
+           }
+         } 
+       }
        
      }
-     
-   }
    }
    
    
@@ -529,4 +531,11 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
  }
  
 
-
+getMutationFromAnalysis=function(path){
+  
+  if("mutations.tab" %in% list.files(path)){
+    return(read.delim(paste0(path,"/mutations.tab")))
+  }else{
+    return(NULL)
+  }
+}

@@ -16,7 +16,7 @@ viz_junctions=function(
                       cutoff_depth=80,
                       mutations=NULL,
                       space_between_samples=5,
-                      is.random_y=T
+                      random_y=0
 ){
 ####--------------------------------------------------------------------------------------
   
@@ -95,12 +95,12 @@ viz_junctions=function(
     layout(paper_bgcolor=paper_bgcolor) %>%
     layout(legend = legende)
   
-  if(is.random_y){
-    random_y=0.5 
-  }else{
-    random_y=1
-  }
-  
+  # if(is.random_y){
+  #   random_y=0.5 
+  # }else{
+  #   random_y=1
+  # }
+  # 
   ################## plots transcripts Exons ------------------------------------------------------------------------------------------------------------------------
   
   exons_colors=generate_colors(length(y_ticktext))
@@ -174,7 +174,7 @@ viz_junctions=function(
       
       if(nrow(junction)>0){
         
-        random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),random_y,1)
+        random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),1-random_y,1)
         
         if(groupJunctionsBy=="anchor"){
           colors=getcolorFromgroup(junction$anchor)
@@ -321,7 +321,7 @@ transcriptList=c("ENST00000357654.3",
 # transcriptList=c()
 principalTranscript="Merged_transcripts"
 space_between_samples=5
-is.random_y=T
+random_y=0
 groupJunctionsBy="status"
 mutations=data.frame(sample=c("56531","42814"),
                      chr=c("chr17","chr17"),
@@ -346,7 +346,7 @@ p=viz_junctions(junctions =junctions,
                 cutoff_depth = cutoff_depth ,
                 mutations=mutations,
                 space_between_samples = space_between_samples,
-                is.random_y =is.random_y )
+                random_y =random_y )
               
   
   

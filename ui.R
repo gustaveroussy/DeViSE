@@ -20,7 +20,7 @@ jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js meth
 
 
 
-header <- dashboardHeader(title = span(img(src = "logo.png", height = 45, width = 90), HTML("<b> DeViSE </b>")))
+header <- dashboardHeader(title = span(img(src = "logo.png", height = 45, width = 90), HTML("<b> DeViSE </b>")),uiOutput("user_profile"))
 
 ######################################### dashboardSidebar #######################################################
 sidebar= dashboardSidebar(disable = T,
@@ -145,13 +145,14 @@ body <-  dashboardBody(
                       ),
                       column(width =12,
                              column(width = 6,selectInput(inputId ="select_principal_transcript",label = "Select principal transcript",choices ="")),
-                             column(width = 6,numericInput(inputId ="cuttof_depth_plot",label = "Minimum number of reads to plot a junction",value=25, min = 0, max = NA, step = 1))
-                             
-                      ),
-                      column(width =12,
                              column(width = 6,selectInput(inputId ="select_transcript",multiple = T,label = "Select other transcripts",choices =""))
                              
+                             
                       ),
+
+                      textOutput("message_plot"),
+                      tags$head(tags$style("#message_plot{color: red; font-size:1.5em;}")),
+                      
                       box(icon=icon('eye'),
                           title = "Graphic settings",
                           status="danger",
@@ -160,7 +161,15 @@ body <-  dashboardBody(
                           width = 12,
                           collapsed = T,
                           column(width =12,
-                                 column(width = 6,numericInput(inputId ="Plot_height",label = "Plot height",value=500, min = 200, max = NA, step = 10))
+                                 
+                                 column(width = 6,selectInput(inputId ="groupby_status",label = "Junctions groupBy:",choices = c("anchor","status (known/unknwon)"),selected = "anchor")),
+                                 column(width = 6,numericInput(inputId ="cuttof_depth_plot",label = "Minimum number of reads to plot a junction",value=25, min = 0, max = NA, step = 1))
+                                 
+                          ),
+                          column(width =12,
+                                 
+                                 column(width = 6,numericInput(inputId ="Plot_height",label = "Plot height",value=500, min = 200, max = NA, step = 10)),
+                                 column(width = 6,numericInput(inputId ="disp_level",label = "Junctions: dispersion level(scale 0-1)",value=0.3, min = 0, max = 1, step = 0.1))
                                  
                           )
                           ),
@@ -170,7 +179,6 @@ body <-  dashboardBody(
                                    text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
                       helpText("Click on the button to plot the junction graph."),
                       uiOutput("plot_junct")
-                      # shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = 800))
                       
                   )
                   )
