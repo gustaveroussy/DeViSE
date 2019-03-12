@@ -1,6 +1,6 @@
 library(stringr)
 library(plotly)
-
+library(jsonlite)
 
 
 #### config varibales (runs host, database params ...)------------------------------------------------------------------
@@ -30,13 +30,18 @@ hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons
 ###### observe docker --------------------------------------------------------------------------------------------------
 
 
-
-# observe({
-#   autoInvalidate()
-#   if (vals$count == 0 && (vals$lastclosing + 20) < as.numeric(Sys.time())){
-#      system(paste0("docker rm -f ",system("hostname ", intern = TRUE)))
-#    }
-#  })
+SESSIONs<- reactiveValues(count= 0 )
+SESSIONs$lastclosing<- as.numeric(Sys.time())
+autoInvalidate <- reactiveTimer( 100000 )
+t=30 # 30 seconde
+observe({
+  autoInvalidate()
+  # tuer le conteneur s'il n'y a aucune session ouverte apres t seconde
+  if (SESSIONs$count== 0 && (SESSIONs$lastclosing+ t )< as.numeric(Sys.time()) ){
+    
+    system(paste0( "docker rm -f ",system("hostname " ,intern = TRUE)))
+  }
+})
 
 ###### END observe docker --------------------------------------------------------------------------------------------------------
 
@@ -47,6 +52,12 @@ hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons
 
 shinyServer(
   function(input, output, session) {
+    
+    isolate(SESSIONs$count <- SESSIONs$count + 1)
+    session$onSessionEnded( function(){
+      isolate(SESSIONs$count <- SESSIONs$count - 1)
+      isolate(SESSIONs$lastclosing <- as.numeric(Sys.time()))
+    })
     
 ############################### login --------------------------------------------------------------------------------------------
     
