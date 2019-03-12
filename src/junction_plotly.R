@@ -150,6 +150,7 @@ viz_junctions=function(
                           y_tickvals[t]-0.75),
                      line=list(width = 1,color=exons_colors[t]),
                      fillcolor=toRGB(exons_colors[t]),
+                     hoverinfo="name",
                      color=exons_colors[t],
                      name=nm,
                      legendgroup=t,
@@ -195,6 +196,7 @@ viz_junctions=function(
                        color=colors,
                        legendgroup=paste(group,i),
                        name=group,
+                       hoverinfo="name",
                        showlegend=T
         )
         p=add_segments(p ,
@@ -204,6 +206,7 @@ viz_junctions=function(
                        yend = y_tickvals[i],
                        line = list(width = 2,color=colors),
                        color=colors,
+                       hoverinfo="name",
                        name=group,
                        legendgroup=paste(group,i),
                        showlegend=F
