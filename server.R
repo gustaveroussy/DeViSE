@@ -228,7 +228,7 @@ shinyServer(
              formatStyle(9,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
              formatStyle(11, color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
              
-             formatStyle("known junction",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("knwon","unknwon"), c("#83a89a","#ba6262"))) 
+             formatStyle("known junction",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("known","unknown"), c("#83a89a","#ba6262"))) 
            
          })
          
@@ -288,16 +288,16 @@ shinyServer(
         paste0("Known_junctions-",analyse$name,'.tsv')
       },
       content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="knwon",],file,row.names = F,sep="\t")
+        write.table(analyse$junctions[analyse$junctions$`known junction`=="known",],file,row.names = F,sep="\t")
       }
     )
     
-    output$download_unknwon_junction <- downloadHandler(
+    output$download_unknown_junction <- downloadHandler(
       filename = function() {
         paste0("Unknown_junctions-",analyse$name,'.tsv')
       },
       content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="unknwon",],file,row.names = F,sep="\t")
+        write.table(analyse$junctions[analyse$junctions$`known junction`=="unknown",],file,row.names = F,sep="\t")
         
       }
     )
@@ -316,16 +316,16 @@ shinyServer(
         paste0("Known_junctions-",analyse$name,'.tsv')
       },
       content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="knwon",],file,row.names = F,sep="\t")
+        write.table(analyse$junctions[analyse$junctions$`known junction`=="known",],file,row.names = F,sep="\t")
       }
     )
     
-    output$download_unknwon_junction_bis <- downloadHandler(
+    output$download_unknown_junction_bis <- downloadHandler(
       filename = function() {
         paste0("Unknown_junctions-",analyse$name,'.tsv')
       },
       content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="unknwon",],file,row.names = F,sep="\t")
+        write.table(analyse$junctions[analyse$junctions$`known junction`=="unknown",],file,row.names = F,sep="\t")
         
       }
     )

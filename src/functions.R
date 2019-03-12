@@ -109,8 +109,8 @@ for (i in files) {
  junctions.tab[[i]]=d
 }
 
-junctions.tab$known_junction[junctions.tab$known_junction==1]="knwon"
-junctions.tab$known_junction[junctions.tab$known_junction==0]="unknwon"
+junctions.tab$known_junction[junctions.tab$known_junction==1]="known"
+junctions.tab$known_junction[junctions.tab$known_junction==0]="unknown"
 
 junctions.tab=junctions.tab[,-which(colnames(junctions.tab) %in% c("name","score","nb_raw_aln","sample","junc_id","known_donor","known_acceptor"))]
 write.table(junctions.tab,paste0(dir_analysis,"/all_junctions_all_samples.tab"),sep = "\t",row.names = F)
@@ -183,7 +183,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    }else{
      colors=rep("#e41a1c",length(x))
      names(colors)=x
-     colors[x=="knwon"]="#999999"
+     colors[x=="known"]="#999999"
    }
    
    return(colors)

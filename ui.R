@@ -162,7 +162,7 @@ body <-  dashboardBody(
                           collapsed = T,
                           column(width =12,
                                  
-                                 column(width = 6,selectInput(inputId ="groupby_status",label = "Junctions groupBy:",choices = c("anchor","status (known/unknwon)"),selected = "anchor")),
+                                 column(width = 6,selectInput(inputId ="groupby_status",label = "Junctions groupBy:",choices = c("anchor","status (known/unknown)"),selected = "anchor")),
                                  column(width = 6,numericInput(inputId ="cuttof_depth_plot",label = "Minimum number of reads to plot a junction",value=25, min = 0, max = NA, step = 1))
                                  
                           ),
