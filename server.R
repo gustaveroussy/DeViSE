@@ -14,6 +14,7 @@ library(jsonlite)
 
 options(shiny.maxRequestSize=1000*1024^2)
 source("src/functions.R")
+source("src/web_servicesTo_Rfunctions.R")
 
 
 ########### END sources  -----------------------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ source("src/functions.R")
 ########### Reactive values --------------------------------------------------------------------------------------------
 
 GTFs=reactiveValues(values=NULL)
+RUNS=reactiveValues(values=NULL)
 analyse=reactiveValues(name=NULL,junctions=NULL,current_transcript=NULL)
 finished_analysis=reactiveValues(name=NULL)
 hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons_default.rds"),
@@ -34,14 +36,14 @@ SESSIONs<- reactiveValues(count= 0 )
 SESSIONs$lastclosing<- as.numeric(Sys.time())
 autoInvalidate <- reactiveTimer( 100000 )
 t=30 # 30 seconde
-observe({
-  autoInvalidate()
-  # tuer le conteneur s'il n'y a aucune session ouverte apres t seconde
-  if (SESSIONs$count== 0 && (SESSIONs$lastclosing+ t )< as.numeric(Sys.time()) ){
-    
-    system(paste0( "docker rm -f ",system("hostname " ,intern = TRUE)))
-  }
-})
+# observe({
+#   autoInvalidate()
+#   # tuer le conteneur s'il n'y a aucune session ouverte apres t seconde
+#   if (SESSIONs$count== 0 && (SESSIONs$lastclosing+ t )< as.numeric(Sys.time()) ){
+#     
+#     system(paste0( "docker rm -f ",system("hostname " ,intern = TRUE)))
+#   }
+# })
 
 ###### END observe docker --------------------------------------------------------------------------------------------------------
 
@@ -65,8 +67,9 @@ shinyServer(
       
       logg=fromJSON(paste0("http://31.10.13.26:8080/Authentification/api/User?login=",input$.username,"&password=",input$.password))
       
-      if(logg$identification=="Successful identification"){
-        
+      # if(logg$identification=="Successful identification"){
+        if(T){
+          
         shinyjs::removeClass(selector = "body", class = "sidebar-collapse")
         shinyjs::show(id = "application", anim = F)
         shinyjs::hide(id = "login_ui", anim = F)
@@ -115,76 +118,199 @@ shinyServer(
     
  ###-------------------------------run junction calling------------------------------------------------------------------
     
-    observeEvent(input$lunch_juncCalling,{
+
+    
+    output$DT_All_run=renderDataTable({
       
-      message=message_JunCalling(input$input_bams,trim(input$analysis_name))
+      input$run_analysis_btn
+      ##------preparation des runs ----
+      runlist=getRunList()
+      analysislist=getAnalysisList()
+      runs=data.frame(name=unique(c(runlist,analysislist)))
+      runs$`Raw data`="non available"
+      runs$`Raw data`[runs$name %in% runlist]="available"
+      runs$Date=Sys.time() ##### à revoir
+      runs$Analysis="Waiting"
+      runs$Analysis[runs$name %in% analysislist]="launched"
+      RUNS$values=runs
+      class_btns=rep("btn-danger",nrow(runs))
+      class_btns[runs$name %in% analysislist]="btn-info"
+      label_btns=rep("Submit  the  analysis",nrow(runs))
+      label_btns[runs$name %in% analysislist]="Details of analysis"
+      icons=rep("eye",nrow(runs))
+      icons[!runs$name %in% analysislist]="telegram-plane"
+      ################################
       
-      if(message!=""){
+      runs$Status=sapply(runs$name,FUN = getRunStatus)
+      runs$Advanced=actionButtonInputs( len = nrow(runs),
+                                        id = 'button_',
+                                        label = label_btns,
+                                        class_btns = class_btns,
+                                        icons = icons,
+                                        onclick = 'Shiny.onInputChange(\"select_button_advanced\",  this.id+"_"+Math.random())'
+                                      )
+      
+
+      datatable(runs,
+                selection = 'none',
+                escape = FALSE,
+                filter = list(position = 'top',
+                              clear = FALSE),
+                options = list(
+                  scrollX = TRUE,
+                  preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
+                  drawCallback = JS('function() {Shiny.bindAll(this.api().table().node()); } '),
+                  initComplete = JS(
+                    "function(settings, json) {",
+                    "$(this.api().table().header()).css({'background-color': '#e0cee0', 'color': 'black'});",
+                    "}"),
+                  aLengthMenu = c(5,10,20,30,50,100,500),
+                  iDisplayLength = 10, 
+                  bSortClasses = TRUE
+                ),
+                rownames = F)%>%
         
-        output$message_junction_calling=renderUI(message$html)
-        alert(message$text)
+        formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+        formatStyle(3,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+        formatStyle(5,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+        
+        formatStyle("Raw data",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("available","non available"), c("#83a89a","#ba6262")))  %>%
+        formatStyle("Status",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("100%","0%"), c("green","red")))  %>%
+        formatStyle("Analysis",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#83a89a","#ba6262"))) 
+    })
+    
+    
+    observeEvent(input$select_button_advanced,{
       
+      updateCheckboxInput(session,inputId = "re_runAll_analysis",value = F)
+      hide(id="samples_re_run_div")
+      
+      if(!is.null(input$select_button_advanced)){
+        
+      selectedRow <- as.numeric(strsplit(input$select_button_advanced, "_")[[1]][2]) 
+      run_name=RUNS$values$name[selectedRow]
+      
+      RUNS$selected=as.character(run_name)
+      
+      if(RUNS$values$`Raw data`[selectedRow]!="non available" && RUNS$values$`Analysis`[selectedRow]=="Waiting"){
+        
+          progress <- shiny::Progress$new(session, min=1, max=100)
+          on.exit(progress$close())
+          progress$set(message = 'In progress ... ')
+          progress$set( value = 100)
+          enable("run_analysis_btn")
+          design=getDesign(getFileListFromRun(run_name,".fastq.gz"))
+          RUNS$design=design
+          RUNS$type="new"
+          RUNS$status=parserJobStatus(RUNS$selected)
+          output$title_run_deviseModal=renderUI(HTML("<h3> <font color='black'><b>Submit a new analysis</b> </font> </h3>"))
+          toggleModal(session, "run_deviseModal", toggle = "toggle")
+          
       }else{
-        finished_analysis$name= trim(input$analysis_name)
-        nbr_bams=length(input$input_bams$datapath)
-        progress <- shiny::Progress$new(session, min=0, max=nbr_bams)
-        on.exit(progress$close())
-        progress$set(message = 'Junction calling in  progress ...',
-                     detail = '')
-        progress$set(value = 1)
+        RUNS$status=parserJobStatus(RUNS$selected)
         
-        t=format(Sys.time(),forma="%y-%m-%d_%H:%M:%S")
-        dir_analysis=paste0("data/usersData/results/", trim(input$analysis_name))
-        out_dir=paste0(dir_analysis,"/junctions_calling")
-        dir.create(out_dir,recursive = T)
+        if(RUNS$values$`Raw data`[selectedRow]!="non available")
+           show(id="samples_re_run_div")
         
-        for (i in 1:nbr_bams) {
-
-          progress$set(message = paste0('Junction calling in  progress ...(',round(i/nbr_bams*100,0),'%)'),
-                       detail = paste0(input$input_bams$name[i]," ..."))
-          progress$set(value = i)
-          out=paste0(out_dir,"/",unlist(strsplit(input$input_bams$name[i],".bam")))
-          cmd=paste0(portcullis," full ",genomePath," ",input$input_bams$datapath[i]," -o ",out)
-          print(cmd)
-          system(cmd,wait = T,ignore.stdout = T)
-          cmd=paste0(regtools,
-                     ' junctions annotate ',
-                     out,"/2-junc/portcullis_all.junctions.bed ",
-                     genomePath," ",
-                     GTFs$values[input$annotation_public_gtf],
-                     " -o ", out,"/2-junc/portcullis_all.junctions_annotated.tab" )
-
-          print(cmd)
-          system(cmd,wait = T,ignore.stdout = T)
-        }
-
-        aggregate_junctions(out_dir,dir_analysis,cutoff = 0)
-        output$message_junction_calling=renderUI({
-                                                 column(12,HTML("<h2><b><font color='green'>
-                                                           Your analysis is successfully completed
-                                                           </b></font></h2>"),
-                                                     actionButton(inputId = "go_to_analyse",
-                                                                  label = HTML("<b>GO TO THE DETAILS OF THE ANALYZES</b>"),
-                                                                  class="btn btn-success",
-                                                                  icon = icon("arrow-alt-circle-right"))
-                                                     
-                                                     )
-                                                 })
-        
+           disable("re_run_analysis_btn")
+           toggleModal(session, "samples_monitoringUI", toggle = "toggle")
         
       }
- 
-       
+      }
+      })
+    
+    output$samples_monitoringDT=renderDataTable({
+      
+      render_jobStatus(RUNS$status)
+      
     })
     
-    observeEvent(input$go_to_analyse,{
-      updateTabItems(session, "tabs", selected = "m2")
-      updateSelectInput(session = session,inputId = "select_analysis",choices = getFinishedAnalysis(),selected = finished_analysis$name )
+    output$design_devise=renderRHandsontable({
+      
+      rhandsontable(RUNS$design,width = "100%") %>%
+        
+        hot_col("sample_id",type = "autocomplete", source = letters)
+      
+    }) 
+    
+    observe({
+
+
+      updateActionButton(session = session,inputId = "re_run_analysis_btn","Resubmit selected samples",icon = icon("redo"))
+      
+      if(length(input$samples_monitoringDT_rows_selected)==0 && !input$re_runAll_analysis){
+        
+        disable("re_run_analysis_btn")
+        
+      }else{
+        
+        enable("re_run_analysis_btn")
+        RUNS$samples_to_resubmit=RUNS$status$`Sample Name`[input$samples_monitoringDT_rows_selected]
+        design=NULL
+        try({design=getDesign(getFileListFromRun(RUNS$selected,".fastq.gz"))})
+        
+        if(!input$re_runAll_analysis){
+         RUNS$design=design[design$sample_id %in% RUNS$samples_to_resubmit,]
+        }else{
+         updateActionButton(session = session,inputId = "re_run_analysis_btn","Resubmit all samples",icon = icon("redo"))
+         RUNS$design=design
+        }
+        output$title_run_deviseModal=renderUI(HTML("<h3> <font color='black'><b>Resubmit  analysis</b> </font> </h3>"))
+        RUNS$type="correction"
+      }
+      
     })
     
-############## ----------------------------------------------------------------------------------------------------------
- 
+    observeEvent(input$re_run_analysis_btn,{
+      enable("run_analysis_btn")
+      toggleModal(session, "samples_monitoringUI", toggle = "close")
+      toggleModal(session, "run_deviseModal", toggle = "toggle")
+    })
+    
+    
+    observeEvent(input$run_analysis_btn,{
+
+      progress <- shiny::Progress$new(session, min=0, max=100)
+      on.exit(progress$close())
+      progress$set(message = 'In progress ...')
+      progress$set(value = 100)
+      disable("run_analysis_btn")
+      design=hot_to_r(input$design_devise)
+      
+      if( RUNS$type=="correction"){
+        
+        old_jobs=readRDS(paste0("data/usersData/runs_jobs/",RUNS$selected))
+        killJob(URLencode(paste0(old_jobs[as.character(design$sample_id)],collapse = " ")))
+        job_ids=run_devise(RUNS$selected,design =design)
+        old_jobs[names(job_ids)]=job_ids
+        saveRDS(old_jobs,paste0("data/usersData/runs_jobs/",RUNS$selected))
+        
+      }else{
+        
+        job_ids=run_devise(RUNS$selected,design =design)
+        saveRDS(job_ids,paste0("data/usersData/runs_jobs/",RUNS$selected))
+      }
+      
+      RUNS$status=parserJobStatus(RUNS$selected)
+      
+      toggleModal(session, "run_deviseModal", toggle = "close")
+      toggleModal(session, "samples_monitoringUI", toggle = "toggle")
+      
+    })
+    
+    
  ###------------------------------- View analysis------------------------------------------------------------------------
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
        observeEvent(input$View_analysis_btn,{
          

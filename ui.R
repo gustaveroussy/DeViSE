@@ -14,8 +14,11 @@ library(shinydashboard)
 library(shinyjs)
 library(DT)
 library(plotly)
-
+library(rhandsontable)
+library(shinyBS)
 source("src/functions.R")
+source("src/web_servicesTo_Rfunctions.R")
+
 jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js method that resets the page
 
 
@@ -28,8 +31,9 @@ sidebar= dashboardSidebar(disable = T,
                           develpped_by,
                           
                           sidebarMenu(id="tabs",
-                                       menuItem("Junction calling", tabName="m1", icon =  icon("chart-line")),
-                                       menuItem("View analysis", tabName="m2", icon =  icon("eye"))
+                                       # menuItem("Junction calling", tabName="m1", icon =  icon("chart-line")),
+                                       menuItem("Runs", tabName="m1", icon =  icon("chart-line")),
+                                       menuItem("Analysis", tabName="m2", icon =  icon("eye"))
                                                 )
                                       
                           )
@@ -40,8 +44,59 @@ sidebar= dashboardSidebar(disable = T,
 
 body <-  dashboardBody(
   
+  ### bs modal 
+  tags$head(tags$style(HTML(
+    ' .modal-lg {
+    overflow-y: scroll;
+    position: absolute;
+    top: 50px;
+    left: 20%;
+    z-index: 1050;
+    width: 60%;
+    margin-left: 0px;
+    padding-bottom: 80px;
+    overflow: visible;
+
+   }'))),
   
-    
+  
+  # HTML("<h3> <font color='black'><b>Submit a new analysis</b> </font> </h3>")
+  
+  bsModal(id="run_deviseModal",
+         uiOutput("title_run_deviseModal"),
+          "btn_viewIncidentals",
+          size = "large",
+          div(id="pipeline_UI",
+              shinycssloaders::withSpinner(rhandsontable::rHandsontableOutput("design_devise",width = "100%")),
+              actionButton(inputId = "run_analysis_btn","Submit",icon = icon("run")),
+              tags$style("button#run_analysis_btn {background-color:#d85252; padding: 5px 25px;
+                                       font-family:Andika, Arial, sans-serif; font-size:1.5em;  letter-spacing:0.05em; text-transform:uppercase ;color:#fff;
+                                       text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
+              helpText("Click on the button to run DeViSE analysis.")
+          )),
+  
+  
+  bsModal(id="samples_monitoringUI",
+          HTML("<h3> <font color='black'><b>Run/Analysis details</b> </font> </h3>"),
+          "btn_viewIncidentals",
+          size = "large",
+
+          div(id="samples_monitoringUI_div",
+              shinycssloaders::withSpinner(DT::DTOutput("samples_monitoringDT")),
+              hidden(
+                    div(id="samples_re_run_div",
+                          checkboxInput("re_runAll_analysis",label = "Resubmit all samples of this analysis."),
+                          actionButton(inputId = "re_run_analysis_btn","Resubmit selected samples",icon = icon("redo"),class="btn-danger"),
+                          helpText("Click on the button to re-run the analysis of selected samples.")
+                        )
+                 )
+          )
+          
+          
+  ),
+  
+  
+  ############ end modals- ---------------------------------------------------------------------------------------------
   
   useShinyjs(),                                           # Include shinyjs in the UI
   extendShinyjs(text = jsResetCode),
@@ -53,7 +108,7 @@ body <-  dashboardBody(
     tabItem(tabName = "m1",
             
           div(id="login_ui",  
-            fluidRow(column(width=4, offset = 4,HTML('<h1 <b> DeViSE: Detection and Vizualisation of Splicing Events</b> </h1>'))
+            fluidRow(column(width=4, offset = 4,HTML('<h1 <b> DeViSE: Detection and Visualization of Splicing Events</b> </h1>'))
                      ,
                      column(width=4, offset = 4,h4("Sign in:"),
                             wellPanel(id = "login",
@@ -69,29 +124,18 @@ body <-  dashboardBody(
               
               hidden(
                 div(id="application",
-                fluidRow( 
+
+                fluidRow(
                         box(icon=icon('list'),
-                        title =HTML('<h1> <font color="black"><b> Junction calling from bams</b> </font> </h1> '),
+                        title =HTML('<h1> <font color="black"><b> List of all runs </b> </font> </h1> '),
                         status="danger",
                         width = 12 ,
-                        column(width =12,
-                        column(width = 6,fileInput("input_bams",label = "Upload your bams",multiple = T)),
-                        column(width = 6,textInput(inputId ="analysis_name",label = "Analysis name" ))
-                        ),
-                        column(width = 12,
-                        column(width = 6,selectInput(inputId ="annotation_public_gtf",label = "Select a reference GTF",choices = c()))
-                        ),
-                        br(),
-                        br(),
-                        actionButton(inputId = "lunch_juncCalling","Submit",icon = icon("run")),
-                        tags$style("button#lunch_juncCalling {background-color:#d85252; padding: 5px 25px;
-                                   font-family:Andika, Arial, sans-serif; font-size:1.5em;  letter-spacing:0.05em; text-transform:uppercase ;color:#fff;
-                                   text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
-                        helpText("Click on the button to start the junction calling analysis."),
-                        uiOutput("message_junction_calling")
+                        shinycssloaders::withSpinner(DT::dataTableOutput("DT_All_run"))
                     )
                     )
-               
+                
+                
+                
                 ))
               ),
     

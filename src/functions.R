@@ -19,6 +19,30 @@ develpped_by=HTML('
 
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
+shinyInput <- function(FUN, len, id,label, ...) {
+  
+  if(len == 0){
+    return(integer(0))
+  }
+  singleShinyInput=function(args,funct, ...){
+    as.character(funct(args[1],args[2], ...))
+  }
+  
+  args=data.frame(id=paste0(id, seq(len)),label=label)
+  inputs=apply(args,MARGIN = 1,FUN = singleShinyInput,funct=FUN, ...)
+  inputs
+  
+}
+
+
+actionButtonInputs=function(len, id,label, icons=NULL,class_btns, ...) {
+  inputs <- character(len)
+  for (i in seq_len(len)) {
+    inputs[i] <- as.character(actionButton(paste0(id, i),label[i],icon=icon(icons[i]),class=class_btns[i],...))
+  }
+  inputs
+}
+
 
 getJunctionFromExons=function(bed){
   
@@ -539,3 +563,99 @@ getMutationFromAnalysis=function(path){
     return(NULL)
   }
 }
+
+
+
+parserJobStatus=function(analyse_name){
+  
+  job_ids=readRDS(paste0("data/usersData/runs_jobs/",analyse_name))
+  res=c()
+  for (i in 1:length(job_ids)) {
+    
+    text=getJobStatus(job_id = job_ids[i])$Status
+    if(is.null(text)){
+      
+      res=rbind(res,c(names(job_ids)[i],job_ids[i],NA,NA,NA,"C",NA))
+      
+    }else{
+      
+      lines=unlist(strsplit(text,"\n"))
+     
+      l = unlist(strsplit(lines[3]," "))
+      l=l[l!=""]
+      res=rbind(res,c(names(job_ids)[i],l))
+    }
+    
+    }
+  
+  colnames(res)=c("Sample Name","Job ID", "Name","User","Time Use", "Status", "Queue")
+  res=as.data.frame(res)
+  res$Status=as.character(res$Status)
+  res$Status[res$Status=="R"]="Running"
+  res$Status[res$Status=="Q"]="Waiting"
+  res$Status[res$Status=="C"]="Complete"
+  
+  return(res[,c(1,2,6)])
+  
+  
+}
+
+getRunStatus=function(run_name){
+  Status=parserJobStatus(run_name)
+  return(paste0(round(length(Status$Status[Status$Status=="Complete"])/nrow(Status),digits = 2)*100,"%"))
+}
+
+
+
+render_jobStatus=function(run_status){
+  
+  run_status$Advanced=shinyInput(actionButton,
+                                 nrow(run_status),
+                                 'button_',
+                                 label = "More Info",
+                                 onclick = 'Shiny.onInputChange(\"select_button_sample_name\",  this.id+"_"+Math.random())',
+                                 icon=icon("info-circle"),
+                                 class="btn-info")
+  
+  # run_status$Advanced=shinyInput(actionButton,
+  #                                nrow(run_status),
+  #                                'button_',
+  #                                label = "Resubmit",
+  #                                onclick = 'Shiny.onInputChange(\"select_button_sample_name_re_run\",  this.id+"_"+Math.random())',
+  #                                icon=icon("redo") )
+  
+ return(datatable(run_status,
+            selection = 'multiple',
+            escape = FALSE,
+            filter = list(position = 'top',
+                          clear = FALSE),
+            options = list(
+              scrollX = TRUE,
+              preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
+              drawCallback = JS('function() {Shiny.bindAll(this.api().table().node()); } '),
+              initComplete = JS(
+                "function(settings, json) {",
+                "$(this.api().table().header()).css({'background-color': '#dbcfc9', 'color': 'black'});",
+                "}"),
+              aLengthMenu = c(5,10,20,30,50,100,500),
+              iDisplayLength = 10, 
+              bSortClasses = TRUE
+            ),
+            rownames = F)%>%
+          
+          formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+          formatStyle(4,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+          formatStyle("Status",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("Complete","Waiting","Running","Hold"), c("#83a89a","#ba6262","#9095ce","#ceb790"))) )
+}
+
+
+
+removeAnalysis=function(run_name){
+  
+  jobs=readRDS(paste0("data/usersData/runs_jobs/",run_name))
+  killJob(URLencode(paste0(jobs,collapse = " ")))
+  removeAnalysis_FS(run_name)
+  file.remove(paste0("data/usersData/runs_jobs/",run_name))
+    return(T)
+  
+    }
