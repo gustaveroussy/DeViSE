@@ -37,16 +37,14 @@ downloadLogFile=function(analysis,sample,logFile,from="rTerminal"){
   }
   
   if(from=="shiny"){
-    print(paste0("window.open('",web_services$host,web_services$download_log_file,"?analysis=",analysis,"&sample=",sample,"&logFile=",logFile,"','_blank')"))
-    shinyjs::runjs(paste0("window.open('",web_services$host,web_services$download_log_file,"?analysis=",analysis,"&sample=",sample,"&logFile=",logFile,"','_blank')"))
-    return(T)
+    return(paste0("window.open('",web_services$host,web_services$download_log_file,"?analysis=",analysis,"&sample=",sample,"&logFile=",logFile,"','_blank')"))
   }
   
   stop('"From" must be one of the folowing value: "shiny" or "rTerminal"')
   return(T)
 }
 
-getJunctionsFromSample=function(analysis,sample,type="ALL"){
+getJunctionsFromSample=function(sample,analysis,type="STATUS"){
   
   junc=fromJSON(paste0(web_services$host,web_services$getJunctions,"?analysis=",analysis,"&sample=",sample))
   
@@ -56,40 +54,60 @@ getJunctionsFromSample=function(analysis,sample,type="ALL"){
   if(type=="FILTERED")
     return(junc$filtered_junctions)
   
+  if(type=="STATUS"){
+    
+    if(junc$All_junctions!="all junctions file does not exist for this sample" && 
+       junc$filtered_junctions!="filtered junctions file does not exist for this sample"){
+      
+      return("Available")
+    }
+    
+    if(junc$All_junctions!="all junctions file does not exist for this sample"){
+      return("Only not filtered junctions available")
+    }
+    
+    if(junc$filtered_junctions!="filtered junctions file does not exist for this sample"){
+      return("Only filtered junctions available")
+    }
+    
+    return("Not available")
+    
+      }
+  
   stop('"type" must be one of the folowing value: "FILTERED" or "ALL"')
   
 }
 
 
 
-downloadLogFile=function(analysis,sample,from="rTerminal",type="ALL"){
-  
-  ws=NULL
-  
-  if(type=="ALL")
-    ws=web_services$download_all_junctionsFile
-  
-  if(type=="FILTERED")
-    ws=web_services$download_filtered_junctionsFile
-  
-  if(is.null(ws))
-    stop('"type" must be one of the folowing value: "ALL" or "FILTERED"')
-  
-  
-  if(from=="rTerminal"){
-    browseURL(paste0(web_services$host,ws,"?analysis=",analysis,"&sample=",sample))
-    return(T)
-  }
-  
-  if(from=="shiny"){
-    print(paste0("window.open('",web_services$host,ws,"?analysis=",analysis,"&sample=",sample,"','_blank')"))
-    shinyjs::runjs(paste0("window.open('",web_services$host,ws,"?analysis=",analysis,"&sample=",sample,"','_blank')"))
-    return(T)
-  }
-  
-  stop('"from" must be one of the folowing value: "shiny" or "rTerminal"')
-  return(T)
-}
+# downloadLogFile=function(analysis,sample,from="rTerminal",type="ALL"){
+#   
+#   ws=NULL
+#   
+#   if(type=="ALL")
+#     ws=web_services$download_all_junctionsFile
+#   
+#   if(type=="FILTERED")
+#     ws=web_services$download_filtered_junctionsFile
+#   
+#   if(is.null(ws))
+#     stop('"type" must be one of the folowing value: "ALL" or "FILTERED"')
+#   
+#   
+#   if(from=="rTerminal"){
+#     browseURL(paste0(web_services$host,ws,"?analysis=",analysis,"&sample=",sample))
+#     return(T)
+#   }
+#   
+#   if(from=="shiny"){
+#     print(paste0("window.open('",web_services$host,ws,"?analysis=",analysis,"&sample=",sample,"','_blank')"))
+#     shinyjs::runjs(paste0("window.open('",web_services$host,ws,"?analysis=",analysis,"&sample=",sample,"','_blank')"))
+#     return(T)
+#   }
+#   
+#   stop('"from" must be one of the folowing value: "shiny" or "rTerminal"')
+#   return(T)
+# }
 
 
 getJobStatus=function(job_id){
@@ -142,6 +160,12 @@ getDesign=function(fastqList,endswith="_001.fastq.gz"){
   
   }
 
+
+getTimestamp=function(analysis){
+  
+  return(fromJSON(paste0(web_services$host,web_services$getTimestamp,"?analysis=",analysis))$Timestamp)
+  
+}
 
 run_devise=function(run_name,design){
   

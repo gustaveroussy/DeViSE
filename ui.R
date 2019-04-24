@@ -32,8 +32,8 @@ sidebar= dashboardSidebar(disable = T,
                           
                           sidebarMenu(id="tabs",
                                        # menuItem("Junction calling", tabName="m1", icon =  icon("chart-line")),
-                                       menuItem("Runs", tabName="m1", icon =  icon("chart-line")),
-                                       menuItem("Analysis", tabName="m2", icon =  icon("eye"))
+                                       menuItem("Runs/Analysis", tabName="m1", icon =  icon("chart-line")),
+                                       menuItem("Post-analysis/visualization", tabName="m2", icon =  icon("eye"))
                                                 )
                                       
                           )
@@ -60,7 +60,186 @@ body <-  dashboardBody(
    }'))),
   
   
-  # HTML("<h3> <font color='black'><b>Submit a new analysis</b> </font> </h3>")
+  ### laoding css -------------------------------------------------
+  tags$head(tags$style(HTML('*{
+    margin: 0;
+  padding: 0;
+  }
+  
+  body{
+  background: #eee;
+  }
+  
+  .circle{
+  width: 180px;
+  height: 180px;
+  border: 10px inset rgb(237, 80, 184);
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -100px;
+  margin-top: -100px;
+  border-radius: 200px;
+  -moz-animation: rotate 5s infinitelinear;
+  -webkit-animation: rotate 5s infinite linear;
+  animation: rotate 5s infinite linear;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  .circle-small{
+  width: 150px;
+  height: 150px;
+  border: 6px outset rgb(241, 133, 133);
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -81px;
+  margin-top: -81px;
+  border-radius: 156px;
+  -moz-animation: rotate-rev 3s infinite linear;
+  -webkit-animation: rotate-rev 3s infinite linear;
+  animation: rotate-rev 3s infinite linear;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  .circle-big{
+  width: 210px;
+  height: 210px;
+  border: 4px dotted rgb(241, 133, 133);
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -109px;
+  margin-top: -109px;
+  border-radius: 214px;
+  -moz-animation: rotate-rev 10s infinite linear;
+  -webkit-animation: rotate-rev 10s infinite linear;
+  animation: rotate-rev 10s infinite linear;
+  }
+  
+  .circle-inner{
+  width: 200px;
+  height: 200px;
+  background-color: rgb(241, 133, 133);
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -80px;
+  margin-top: -80px;
+  border-radius: 80px;
+  -moz-animation: pulse 1.5s infinite ease-in;
+  -webkit-animation: pulse 1.5s infinite ease-in;
+  animation: pulse 1.5s infinite ease-in;
+  opacity: 1;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  .circle-inner-inner{
+  width: 100px;
+  height: 100px;
+  background-color: rgb(74,124,134);
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -50px;
+  margin-top: -50px;
+  border-radius: 100px;
+  -moz-animation: pulse 1.5s infinite ease-in;
+  -webkit-animation: pulse 1.5s infinite ease-in;
+  animation: pulse 1.5s infinite ease-in;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  
+  /*==============ANIMATIONS=================*/
+  
+  /*==============ROTATE=====================*/
+  
+  @-moz-keyframes rotate{
+  0% {-moz-transform: rotate(0deg);}
+  100% {-moz-transform: rotate(360deg);}
+  }
+  
+  @-webkit-keyframes rotate{
+  0% {-webkit-transform: rotate(0deg);}
+  100% {-webkit-transform: rotate(360deg);}
+  }
+  
+  @keyframes rotate{
+  0% {transform: rotate(0deg);}
+  100% {transform: rotate(360deg);}
+  }
+  
+  /*==============ROTATE-REV=================*/
+  
+  @-moz-keyframes rotate-rev{
+  0% {-moz-transform: rotate(0deg);}
+  100% {-moz-transform: rotate(-360deg);}
+  }
+  
+  @-webkit-keyframes rotate-rev{
+  0% {-webkit-transform: rotate(0deg);}
+  100% {-webkit-transform: rotate(-360deg);}
+  }
+  
+  @keyframes rotate-rev{
+  0% {transform: rotate(0deg);}
+  100% {transform: rotate(-360deg);}
+  }
+  
+  /*==============PULSE======================*/
+  
+  @-moz-keyframes pulse{
+  0% {
+  -moz-transform: scale(0.1);
+  opacity: 0.2;
+  }
+  50% {
+  -moz-transform: scale(1);
+  opacity: 0.8;
+  }
+  100% {
+  -moz-transform: scale(0.1);
+  opacity: 0.2;
+  }
+  }
+  
+  @-webkit-keyframes pulse{
+  0% {
+  -webkit-transform: scale(0.1);
+  opacity: 0.2;
+  }
+  50% {
+  -webkit-transform: scale(1);
+  opacity: 0.8;
+  }
+  100% {
+  -webkit-transform: scale(0.1);
+  opacity: 0.2;
+  }
+  }
+  
+  @keyframes pulse{
+  0% {
+  transform: scale(0.1);
+  opacity: 0.2;
+  }
+  50% {
+  transform: scale(1);
+  opacity: 0.8;
+  }
+  100% {
+  transform: scale(0.1);
+  opacity: 0.2;
+  }
+  }'
+  ))),
+  
   
   bsModal(id="run_deviseModal",
          uiOutput("title_run_deviseModal"),
@@ -72,12 +251,19 @@ body <-  dashboardBody(
               tags$style("button#run_analysis_btn {background-color:#d85252; padding: 5px 25px;
                                        font-family:Andika, Arial, sans-serif; font-size:1.5em;  letter-spacing:0.05em; text-transform:uppercase ;color:#fff;
                                        text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
-              helpText("Click on the button to run DeViSE analysis.")
+              helpText("Click on the button to run DeViSE analysis."),
+              hidden(div(id="loading_modal",
+                         HTML( '<div class="circle">  </div>
+                                <div class="circle-small"></div>
+                                <div class="circle-big"></div>
+                                <div class="circle-inner-inner"></div>
+                                <div class="circle-inner"> <h1> <b> Please wait <b> </h1></div>')
+                         ))
           )),
   
   
   bsModal(id="samples_monitoringUI",
-          HTML("<h3> <font color='black'><b>Run/Analysis details</b> </font> </h3>"),
+          uiOutput("title_samples_monitoringUI"),
           "btn_viewIncidentals",
           size = "large",
 
@@ -89,7 +275,17 @@ body <-  dashboardBody(
                           actionButton(inputId = "re_run_analysis_btn","Resubmit selected samples",icon = icon("redo"),class="btn-danger"),
                           helpText("Click on the button to re-run the analysis of selected samples.")
                         )
-                 )
+                 ),
+              br(),
+              shinycssloaders::withSpinner(uiOutput("log_files")),
+              hidden(div(id="loading_modal2",
+                         HTML(' <div class="circle">  </div>
+                                <div class="circle-small"></div>
+                                <div class="circle-big"></div>
+                                <div class="circle-inner-inner"></div>
+                                <div class="circle-inner"> <h1> <b> Please wait <b> </h1></div>')
+              ))
+ 
           )
           
           
@@ -98,8 +294,10 @@ body <-  dashboardBody(
   
   ############ end modals- ---------------------------------------------------------------------------------------------
   
-  useShinyjs(),                                           # Include shinyjs in the UI
+  useShinyjs(),
   extendShinyjs(text = jsResetCode),
+  
+
 
   
   tabItems(
@@ -108,8 +306,7 @@ body <-  dashboardBody(
     tabItem(tabName = "m1",
             
           div(id="login_ui",  
-            fluidRow(column(width=4, offset = 4,HTML('<h1 <b> DeViSE: Detection and Visualization of Splicing Events</b> </h1>'))
-                     ,
+            fluidRow(column(width=4, offset = 4,HTML('<h1 <b> DeViSE: Detection and Visualization of Splicing Events</b> </h1>')),
                      column(width=4, offset = 4,h4("Sign in:"),
                             wellPanel(id = "login",
                                       textInput(".username", "Username:"),
@@ -127,7 +324,7 @@ body <-  dashboardBody(
 
                 fluidRow(
                         box(icon=icon('list'),
-                        title =HTML('<h1> <font color="black"><b> List of all runs </b> </font> </h1> '),
+                        title =HTML('<h1> <font color="black"><b> List of all runs/analysis </b> </font> </h1> '),
                         status="danger",
                         width = 12 ,
                         shinycssloaders::withSpinner(DT::dataTableOutput("DT_All_run"))
@@ -141,26 +338,30 @@ body <-  dashboardBody(
     
     tabItem(tabName = "m2",
             
-            
             fluidRow( 
               box(icon=icon('eye'),
                   title =HTML('<h1> <font color="black"><b> View analysis </b> </font> </h1> '),
                   status="danger",
                   width = 12 ,
                   column(width =12,
-                    column(width = 6,selectInput(inputId ="select_analysis",label = "Select an analysis",choices = getFinishedAnalysis())),
-                    column(width = 6,numericInput(inputId ="cuttof_depth",label = "Minimum number of reads to keep a junction",value=25, min = 0, max = NA, step = 1))
-                    
+                    column(width = 6,selectInput(inputId ="select_analysis",label = "Select an analysis",multiple = T,choices = getAnalysisList())),
+                    column(width = 6,selectInput(inputId ="type_junctions",label = "Select a type of results",multiple = F,choices =c("FILTERED","ALL")))
                   ),
-              
+                  column(width =12,
+                  column(width = 6,selectInput(inputId ="select_samples_junc",label = "Select samples",multiple = T,choices = "")),
+                  column(width = 6,numericInput(inputId ="cuttof_depth",label = "Minimum number of reads to keep a junction",value=25, min = 0, max = NA, step = 1))
+                  ),       
+                  
                   actionButton(inputId = "View_analysis_btn","Submit",icon = icon("run")),
                   tags$style("button#View_analysis_btn {background-color:#d85252; padding: 5px 25px;
                                    font-family:Andika, Arial, sans-serif; font-size:1.5em;  letter-spacing:0.05em; text-transform:uppercase ;color:#fff;
                                    text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
                   helpText("Click on the button to view the details of selected analysis."),
+                  uiOutput("samples_invalid"),
                   
                   hidden(
                     div(id="results_output",
+                       
                         box(icon=icon('eye'),
                         title = HTML('<h3> <font color="black"><b> Junctions table </b> </font> </h3> '),
                         status="danger",
@@ -168,15 +369,10 @@ body <-  dashboardBody(
                         width = 12 ,
                         HTML('<h4> Click <a href="https://regtools.readthedocs.io/en/latest/commands/junctions-annotate/#output" target="_blank">  here </a> to see the explanation of each column</h4>'),
                         br(),
-                        div(
-                          downloadButton(outputId = "download_all_junction",label = "Download all junctions"),
-                          downloadButton(outputId = "download_known_junction",label = "Download a known junctions"),
-                          downloadButton(outputId = "download_unknwon_junction",label = "Download unknwon junctions")),
+                        
+                        div(downloadButton(outputId = "download_all_junction",label = "Download")),
                         shinycssloaders::withSpinner(DT::dataTableOutput("DT_All_samples")),
-                        div(
-                          downloadButton(outputId = "download_all_junction_bis",label = "Download all junctions"),
-                          downloadButton(outputId = "download_known_junction_bis",label = "Download a known junctions"),
-                          downloadButton(outputId = "download_unknwon_junction_bis",label = "Download unknwon junctions"))
+                        div(downloadButton(outputId = "download_all_junction_bis",label = "Download"))
                         
                   ),
                   box(title = HTML('<h3> <font color="black"><b> Junctions vizualisation </b> </font> </h3> '),
@@ -204,12 +400,12 @@ body <-  dashboardBody(
                           solidHeader = T,
                           width = 12,
                           collapsed = T,
-                          column(width =12,
-                                 
-                                 column(width = 6,selectInput(inputId ="groupby_status",label = "Junctions groupBy:",choices = c("anchor","status (known/unknown)"),selected = "anchor")),
-                                 column(width = 6,numericInput(inputId ="cuttof_depth_plot",label = "Minimum number of reads to plot a junction",value=25, min = 0, max = NA, step = 1))
-                                 
-                          ),
+                          # column(width =12,
+                          #        
+                          #        column(width = 6,selectInput(inputId ="groupby_status",label = "Junctions groupBy:",choices = c("anchor","status (known/unknown)"),selected = "anchor")),
+                          #        column(width = 6,numericInput(inputId ="cuttof_depth_plot",label = "Minimum number of reads to plot a junction",value=25, min = 0, max = NA, step = 1))
+                          #        
+                          # ),
                           column(width =12,
                                  
                                  column(width = 6,numericInput(inputId ="Plot_height",label = "Plot height",value=500, min = 200, max = NA, step = 10)),
@@ -228,11 +424,17 @@ body <-  dashboardBody(
                   )
                ))
             )
-            
-            
     )
 
     ),
+  hidden(div(id="loading",
+             HTML('<div class="circle">  </div>
+                    <div class="circle-small"></div>
+                    <div class="circle-big"></div>
+                    <div class="circle-inner-inner"></div>
+                    <div class="circle-inner"> <h1> <b> Please wait <b> </h1></div>')
+  )),
+  
   HTML("   <center>
            <img src= 'devise.svg'  height = '300'  width = '300' >
            <br/><h4 style='position: relative; bottom: 0; width:100%;'> <font color='black'> Please contact ADNANI Yahia <font color='blue'>  

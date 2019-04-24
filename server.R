@@ -54,9 +54,16 @@ t=30 # 30 seconde
 
 shinyServer(
   function(input, output, session) {
+      
+
     
-    isolate(SESSIONs$count <- SESSIONs$count + 1)
-    session$onSessionEnded( function(){
+    isolate({
+      SESSIONs$count <- SESSIONs$count + 1
+      if(SESSIONs$count>1)
+        shinyjs::runjs(paste0("window.location.replace('http://phoenix.intra.igr.fr:8080/')"))
+    })
+     
+      session$onSessionEnded( function(){
       isolate(SESSIONs$count <- SESSIONs$count - 1)
       isolate(SESSIONs$lastclosing <- as.numeric(Sys.time()))
     })
@@ -64,7 +71,7 @@ shinyServer(
 ############################### login --------------------------------------------------------------------------------------------
     
     observeEvent(input$.login,{
-      
+      output$log_files=renderUI(br())
       logg=fromJSON(paste0("http://31.10.13.26:8080/Authentification/api/User?login=",input$.username,"&password=",input$.password))
       
       # if(logg$identification=="Successful identification"){
@@ -127,11 +134,12 @@ shinyServer(
       runlist=getRunList()
       analysislist=getAnalysisList()
       runs=data.frame(name=unique(c(runlist,analysislist)))
-      runs$`Raw data`="non available"
+      runs$`Raw data`="not available"
       runs$`Raw data`[runs$name %in% runlist]="available"
-      runs$Date=Sys.time() ##### à revoir
+      runs$Date="" ##### à revoir
       runs$Analysis="Waiting"
       runs$Analysis[runs$name %in% analysislist]="launched"
+      runs$Date[runs$name %in% analysislist]=sapply( runs$name[runs$name %in% analysislist],getTimestamp)
       RUNS$values=runs
       class_btns=rep("btn-danger",nrow(runs))
       class_btns[runs$name %in% analysislist]="btn-info"
@@ -139,9 +147,9 @@ shinyServer(
       label_btns[runs$name %in% analysislist]="Details of analysis"
       icons=rep("eye",nrow(runs))
       icons[!runs$name %in% analysislist]="telegram-plane"
-      ################################
       
-      runs$Status=sapply(runs$name,FUN = getRunStatus)
+      ################################
+      runs$`Progress (%)`=sapply(runs$name,FUN = getRunStatus)
       runs$Advanced=actionButtonInputs( len = nrow(runs),
                                         id = 'button_',
                                         label = label_btns,
@@ -151,7 +159,7 @@ shinyServer(
                                       )
       
 
-      datatable(runs,
+      datatable(runs[order(runs$Date,decreasing = T),],
                 selection = 'none',
                 escape = FALSE,
                 filter = list(position = 'top',
@@ -162,7 +170,7 @@ shinyServer(
                   drawCallback = JS('function() {Shiny.bindAll(this.api().table().node()); } '),
                   initComplete = JS(
                     "function(settings, json) {",
-                    "$(this.api().table().header()).css({'background-color': '#e0cee0', 'color': 'black'});",
+                    "$(this.api().table().header()).css({'background-color': '#dbcfc9', 'color': 'black'});",
                     "}"),
                   aLengthMenu = c(5,10,20,30,50,100,500),
                   iDisplayLength = 10, 
@@ -172,18 +180,40 @@ shinyServer(
         
         formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
         formatStyle(3,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
-        formatStyle(5,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
         
-        formatStyle("Raw data",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("available","non available"), c("#83a89a","#ba6262")))  %>%
-        formatStyle("Status",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("100%","0%"), c("green","red")))  %>%
-        formatStyle("Analysis",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#83a89a","#ba6262"))) 
+        formatStyle("Raw data",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("available","not available"), c("#83a89a","#ba6262")))  %>%
+        formatStyle("Analysis",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#83a89a","#ba6262"))) %>% 
+        formatStyle("Progress (%)",
+                      background = styleColorBar(c(100,0), '#adffb9'),
+                      backgroundSize = '98% 88%',
+                      fontWeight = 'bold',
+                      color = "#c42b2b",
+                      backgroundRepeat = 'no-repeat',
+                      backgroundPosition = 'center')
     })
     
     
+        output$samples_monitoringDT=renderDataTable({
+          input$select_button_advanced
+          render_jobStatus(RUNS$status)
+          
+        })
+    
+        output$design_devise=renderRHandsontable({
+          input$select_button_advanced
+           rhandsontable(RUNS$design,width = "100%") %>%
+            
+            hot_col("sample_id",type = "autocomplete", source = letters)
+          
+        }) 
+    
     observeEvent(input$select_button_advanced,{
+      show("loading")
       
+      output$log_files=renderUI(br())
       updateCheckboxInput(session,inputId = "re_runAll_analysis",value = F)
       hide(id="samples_re_run_div")
+      input$select_button_advanced
       
       if(!is.null(input$select_button_advanced)){
         
@@ -192,46 +222,32 @@ shinyServer(
       
       RUNS$selected=as.character(run_name)
       
-      if(RUNS$values$`Raw data`[selectedRow]!="non available" && RUNS$values$`Analysis`[selectedRow]=="Waiting"){
+      if(RUNS$values$`Raw data`[selectedRow]!="not available" && RUNS$values$`Analysis`[selectedRow]=="Waiting"){
         
-          progress <- shiny::Progress$new(session, min=1, max=100)
-          on.exit(progress$close())
-          progress$set(message = 'In progress ... ')
-          progress$set( value = 100)
           enable("run_analysis_btn")
           design=getDesign(getFileListFromRun(run_name,".fastq.gz"))
           RUNS$design=design
           RUNS$type="new"
-          RUNS$status=parserJobStatus(RUNS$selected)
-          output$title_run_deviseModal=renderUI(HTML("<h3> <font color='black'><b>Submit a new analysis</b> </font> </h3>"))
+          output$title_run_deviseModal=renderUI(HTML(paste0("<h3> <font color='black'><b>Submit a new analysis: </b> </font>",RUNS$selected," </h3>")))
           toggleModal(session, "run_deviseModal", toggle = "toggle")
           
       }else{
-        RUNS$status=parserJobStatus(RUNS$selected)
+
+          RUNS$status=parserJobStatus(RUNS$selected)
+          output$title_samples_monitoringUI=renderUI(HTML(paste0("<h3> <font color='black'><b>Run/Analysis details: </b> </font>",RUNS$selected," </h3>")))
+          
+        if(RUNS$values$`Raw data`[selectedRow]!="not available")
         
-        if(RUNS$values$`Raw data`[selectedRow]!="non available")
            show(id="samples_re_run_div")
-        
            disable("re_run_analysis_btn")
            toggleModal(session, "samples_monitoringUI", toggle = "toggle")
         
       }
       }
+      hide("loading")
       })
     
-    output$samples_monitoringDT=renderDataTable({
-      
-      render_jobStatus(RUNS$status)
-      
-    })
-    
-    output$design_devise=renderRHandsontable({
-      
-      rhandsontable(RUNS$design,width = "100%") %>%
-        
-        hot_col("sample_id",type = "autocomplete", source = letters)
-      
-    }) 
+
     
     observe({
 
@@ -255,27 +271,29 @@ shinyServer(
          updateActionButton(session = session,inputId = "re_run_analysis_btn","Resubmit all samples",icon = icon("redo"))
          RUNS$design=design
         }
-        output$title_run_deviseModal=renderUI(HTML("<h3> <font color='black'><b>Resubmit  analysis</b> </font> </h3>"))
+        output$title_run_deviseModal=renderUI(HTML(paste0("<h3> <font color='black'><b>Resubmit  analysis: </b> </font>",RUNS$selected," </h3>")))
         RUNS$type="correction"
       }
       
     })
     
     observeEvent(input$re_run_analysis_btn,{
+      show("loading_modal2")
       enable("run_analysis_btn")
       toggleModal(session, "samples_monitoringUI", toggle = "close")
       toggleModal(session, "run_deviseModal", toggle = "toggle")
+      hide("loading_modal2")
+      
     })
     
     
     observeEvent(input$run_analysis_btn,{
 
-      progress <- shiny::Progress$new(session, min=0, max=100)
-      on.exit(progress$close())
-      progress$set(message = 'In progress ...')
-      progress$set(value = 100)
+      show("loading_modal")
+      
       disable("run_analysis_btn")
       design=hot_to_r(input$design_devise)
+      output$log_files=renderUI(br())
       
       if( RUNS$type=="correction"){
         
@@ -295,75 +313,140 @@ shinyServer(
       
       toggleModal(session, "run_deviseModal", toggle = "close")
       toggleModal(session, "samples_monitoringUI", toggle = "toggle")
+      hide("loading_modal")
       
     })
     
     
+    observeEvent(input$select_button_sample_name,{
+      show("loading_modal2")
+      
+        selectedRow <- as.numeric(strsplit(input$select_button_sample_name, "_")[[1]][2])
+        sample_name=as.character(RUNS$status$`Sample Name`[selectedRow])
+        run_name=RUNS$selected
+        logList=sort(getLogListFromSample(analysis = run_name,sample = sample_name),decreasing = T)
+        
+        output$log_files=renderUI({
+          if(length(logList)==1){
+            box(icon=icon('list'),
+                title = HTML(paste0("<h3><b>No available log file for this sample </b>",sample_name,"</h3>")),
+                width = 12 ,solidHeader = T,
+                background = "orange" 
+            )
+            
+          }else{
+
+            box(icon=icon('list'),
+                title = HTML(paste0("<h3><b>Log files: </b>",sample_name,"</h3>")),
+                status="danger",
+                width = 12 ,
+                collapsible = T,
+                lapply(logList, function(i){
+                  column(12,
+                         actionLink(paste0("key1_temp_",i),label=paste0(i),icon=icon("download"),onclick =downloadLogFile(run_name,sample_name,i,"shiny"))
+                  )
+                })            )
+            
+          }
+          })
+        hide("loading_modal2")
+        
+        })
+    
  ###------------------------------- View analysis------------------------------------------------------------------------
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        observe({
+         updateSelectInput(session,
+                           inputId ="select_samples_junc",
+                           label = "Select samples",
+                           choices = getlistsamplesFromRunList(input$select_analysis))  
+          
+        })
     
        observeEvent(input$View_analysis_btn,{
          
-         progress <- shiny::Progress$new(session, min=0, max=100)
-         on.exit(progress$close())
-         progress$set(message = 'In progress ...')
-         progress$set(value = 100)
-         shinyjs::showElement("results_output")
-         output$plot_junct=renderUI(br())
-         analyse$name=input$select_analysis
-         analyse$path=paste0("data/usersData/results/",input$select_analysis)
-         analyse$junctions=aggregate_junctions(paste0(analyse$path,"/junctions_calling"),dir_analysis=analyse$path,cutoff = input$cuttof_depth)
-         colnames(analyse$junctions)=str_replace_all(colnames(analyse$junctions),pattern = "_",replacement = " ")
-         updateSelectInput(session,inputId = "select_gene",choices = unique(analyse$junctions$genes[!str_detect(analyse$junctions$genes,pattern = ",")]))
-         updateSelectInput(session,inputId = "select_samples",choices = colnames(analyse$junctions)[13:ncol(analyse$junctions)])
-         output$DT_All_samples=renderDataTable({
-           
-           datatable(analyse$junctions[,-12],
-                     selection = 'single',
-                     escape = FALSE,
-                     filter = list(position = 'top',
-                                   clear = FALSE),
-                     options = list(
-                       scrollX = TRUE,
-                       preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
-                       drawCallback = JS('function() {Shiny.bindAll(this.api().table().node()); } '),
-                       initComplete = JS(
-                         "function(settings, json) {",
-                         "$(this.api().table().header()).css({'background-color': '#dbcfc9', 'color': 'black'});",
-                         "}"),
-                       aLengthMenu = c(5,10,20,30,50,100,500),
-                       iDisplayLength = 10, 
-                       bSortClasses = TRUE
-                     ),
-                     rownames = F) %>%
-             
-             formatStyle(1,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
-             formatStyle(3,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
-             formatStyle(5,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
-             formatStyle(7,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
-             formatStyle(9,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
-             formatStyle(11, color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
-             
-             formatStyle("known junction",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("known","unknown"), c("#83a89a","#ba6262"))) 
-           
-         })
+         show("loading")
          
+         output$plot_junct=renderUI(br())
+
+         if(length(input$select_samples_junc)==0){
+           
+           alert("Please select one/multiple samples from one/multiple analysis.")
+           
+         }else{
+ 
+         junctions=aggregate_junctions(samplesList = input$select_samples_junc,type = input$type_junctions)
+         analyse$junctions=junctions$junctions.tab
+         
+         if(!is.null(junctions$junctions.tab)){
+           
+             analyse$junctions=analyse$junctions[analyse$junctions$maxReads_AllSamples>=input$cuttof_depth,]
+             colnames(analyse$junctions)[1:11]=str_replace_all(colnames(analyse$junctions),pattern = "_",replacement = " ")[1:11]
+             updateSelectInput(session,inputId = "select_gene",choices = unique(analyse$junctions$genes[!str_detect(analyse$junctions$genes,pattern = ",")]))
+             updateSelectInput(session,inputId = "select_samples",choices = colnames(analyse$junctions)[13:(ncol(analyse$junctions)-1)])
+             shinyjs::showElement("results_output")
+             
+         }else{
+           shinyjs::hide("results_output")
+         }
+         
+         if(length(junctions$samples_notValid)>0){
+           output$samples_invalid=renderUI(
+             box(HTML(paste0("<b><h4>Warning !! The results are not available for the following samples:</h4>",paste0(junctions$samples_notValid,collapse = "</br>"),"</b>")),background = "orange",solidHeader = T)
+           )
+         }else{
+           output$samples_invalid=renderUI(br())
+         }
+         
+         
+         }
+         
+         hide("loading")
        })
     
+       # observe({
+       #   
+       #   if(!is.na(input$cuttof_depth))
+       #     analyse$junctions=analyse$junctions[analyse$junctions$maxReads_AllSamples>=input$cuttof_depth,]
+       #   
+       # })
+       
+       output$DT_All_samples=renderDataTable({
+         
+         datatable(analyse$junctions[,-12],
+                   selection = 'single',
+                   escape = FALSE,
+                   filter = list(position = 'top',
+                                 clear = FALSE),
+                   options = list(
+                     scrollX = TRUE,
+                     preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
+                     drawCallback = JS('function() {Shiny.bindAll(this.api().table().node()); } '),
+                     initComplete = JS(
+                       "function(settings, json) {",
+                       "$(this.api().table().header()).css({'background-color': '#dbcfc9', 'color': 'black'});",
+                       "}"),
+                     aLengthMenu = c(5,10,20,30,50,100,500),
+                     iDisplayLength = 10, 
+                     bSortClasses = TRUE
+                   ),
+                   rownames = F) %>%
+           
+           formatStyle(1,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
+           formatStyle(3,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
+           formatStyle(5,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
+           formatStyle(7,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
+           formatStyle(9,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
+           formatStyle(11, color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
+           
+           formatStyle("known junction",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("known","unknown"), c("#83a89a","#ba6262"))) 
+         
+       })
+       
+       
     observeEvent(input$select_gene,{
      
        if(input$select_gene!=""){
-        
+        print(head(analyse$junctions))
         transcripts=analyse$junctions$transcripts[analyse$junctions$genes==input$select_gene]
         transcripts=as.character(transcripts[!is.na(transcripts)])
         
@@ -401,69 +484,35 @@ shinyServer(
     
     output$download_all_junction <- downloadHandler(
       filename = function() {
-        paste0("All_junctions-",analyse$name,'.tsv')
+        paste0("aggregate_junctions-",analyse$name,'.tsv')
       },
       content = function(file) {
-        write.table(analyse$junctions,file,row.names = F,sep="\t")
+        write.table(analyse$junctions[input$DT_All_samples_rows_all,],file,row.names = F,sep="\t")
         
       }
     )
     
-    output$download_known_junction <- downloadHandler(
-      filename = function() {
-        paste0("Known_junctions-",analyse$name,'.tsv')
-      },
-      content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="known",],file,row.names = F,sep="\t")
-      }
-    )
-    
-    output$download_unknown_junction <- downloadHandler(
-      filename = function() {
-        paste0("Unknown_junctions-",analyse$name,'.tsv')
-      },
-      content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="unknown",],file,row.names = F,sep="\t")
-        
-      }
-    )
+   
     output$download_all_junction_bis <- downloadHandler(
       filename = function() {
-        paste0("All_junctions-",analyse$name,'.tsv')
+        paste0("aggregate_junctions-",analyse$name,'.tsv')
       },
       content = function(file) {
-        write.table(analyse$junctions,file,row.names = F,sep="\t")
+        write.table(analyse$junctions[input$DT_All_samples_rows_all,],file,row.names = F,sep="\t")
         
       }
     )
     
-    output$download_known_junction_bis <- downloadHandler(
-      filename = function() {
-        paste0("Known_junctions-",analyse$name,'.tsv')
-      },
-      content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="known",],file,row.names = F,sep="\t")
-      }
-    )
-    
-    output$download_unknown_junction_bis <- downloadHandler(
-      filename = function() {
-        paste0("Unknown_junctions-",analyse$name,'.tsv')
-      },
-      content = function(file) {
-        write.table(analyse$junctions[analyse$junctions$`known junction`=="unknown",],file,row.names = F,sep="\t")
-        
-      }
-    )
-    
+   
     
 #------------------------------------------------------------------------------------------------------------------------
 
 ##### Plotly ------------------------------------------------------------------------------------------------------------
     
     observeEvent(input$plot_junction_btn,{
-       
-
+      show("loading")
+      
+      
       if(!is.null(input$select_samples) &&
          length(input$select_samples)!=0 &&
          input$select_samples!="" &&
@@ -495,8 +544,8 @@ shinyServer(
                         gene_transcript = analyse$current_transcripts[1],
                         principalTranscript =input$select_principal_transcript,
                         transcriptList = transcriptList,
-                        groupJunctionsBy = input$groupby_status,
-                        cutoff_depth = input$cuttof_depth_plot,
+                        groupJunctionsBy = "status",
+                        cutoff_depth = 1,
                         mutations =getMutationFromAnalysis(paste0("data/usersData/results/",analyse$name)), 
                         random_y = input$disp_level
           )
@@ -508,7 +557,8 @@ shinyServer(
       }else{
         output$message_plot=renderText("Oops !! One or more inputs above are not reported")
       }
-
+      hide("loading")
+      
     })
 
 #####--------------------------------------------------------------------------------------------------------------------

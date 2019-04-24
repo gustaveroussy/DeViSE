@@ -1,7 +1,24 @@
 
 genomePath=paste0(getwd(),"/","data/appData/public_annotation/gencodeV19_dna.fa")
-portcullis="portcullis"
-regtools="regtools"
+
+
+col.names_junc=c( "chrom" ,
+                  "start",
+                  "end",
+                  "name",
+                  "score" ,
+                  "strand",
+                  "splice_site",
+                  "acceptors_skipped",
+                  "exons_skipped",
+                  "donors_skipped",
+                  "anchor",
+                  "known_donor",
+                  "known_acceptor",
+                  "known_junction",
+                  "genes",
+                  "transcripts")
+
 
 develpped_by=HTML('
                                <body>
@@ -102,50 +119,115 @@ message_JunCalling=function(input_bams,input_analysis_name){
 
 
 
-aggregate_junctions=function(path_analysis,dir_analysis,cutoff_depth=25){
+# aggregate_junctions=function(path_analysis,dir_analysis,cutoff_depth=25){
+#   
+# junctions=data.frame()
+# files=list.files(path_analysis)
+# 
+# for (i in files) {
+#   
+#   junction=read.delim(paste0(path_analysis,"/",i,"/2-junc/portcullis_all.junctions_annotated.tab"))
+#   junction$nb_raw_aln=junction$score
+#   junction$sample=i
+#   junction=junction[junction$nb_raw_aln>cutoff_depth,]
+#   junctions=rbind(junctions,junction)
+# }
+# 
+# junctions$junc_id=paste0(junctions$chrom,":",junctions$start,"-",junctions$end)
+# 
+# 
+# junctions.tab=junctions[!duplicated(junctions$junc_id),]
+# all_junctions=junctions.tab$junc_id
+# 
+# for (i in files) {
+#  d=rep(0,length(all_junctions))
+#  names(d)=all_junctions
+#  junction=junctions[junctions$sample==i,]
+#  depth=junction$nb_raw_aln
+#  names(depth)=as.character(junction$junc_id)
+#  d[names(depth)]=depth
+#  junctions.tab[[i]]=d
+# }
+# 
+# junctions.tab$known_junction[junctions.tab$known_junction==1]="known"
+# junctions.tab$known_junction[junctions.tab$known_junction==0]="unknown"
+# 
+# junctions.tab=junctions.tab[,-which(colnames(junctions.tab) %in% c("name","score","nb_raw_aln","sample","junc_id","known_donor","known_acceptor"))]
+# write.table(junctions.tab,paste0(dir_analysis,"/all_junctions_all_samples.tab"),sep = "\t",row.names = F)
+# 
+# 
+# return(junctions.tab)
+# 
+# }
+
+
+aggregate_junctions=function(samplesList,type="ALL"){
   
-junctions=data.frame()
-files=list.files(path_analysis)
-
-for (i in files) {
+  junctions=data.frame()
   
-  junction=read.delim(paste0(path_analysis,"/",i,"/2-junc/portcullis_all.junctions_annotated.tab"))
-  depths=read.delim(paste0(path_analysis,"/",i,"/2-junc/portcullis_all.junctions.tab"))
-  junction$nb_raw_aln=depths$nb_raw_aln
-  junction$sample=i
-  junction=junction[junction$nb_raw_aln>cutoff_depth,]
-  junctions=rbind(junctions,junction)
+  samples_valid=c()
+  samples_notValid=c()
+  
+  for (i in samplesList) {
+    
+    r=strsplit(i,"/")[[1]][1]
+    s=strsplit(i,"/")[[1]][2]
+    
+    junction=getJunctionsFromSample(sample = s,analysis = r,type = type)
+    if(length(junction)!=1){
+      junction=junction[,col.names_junc]
+      junction$score=as.numeric(as.character(junction$score))
+      junction$start=as.numeric(as.character(junction$start))
+      junction$end=as.numeric(as.character(junction$end))
+      junction$nb_raw_aln=junction$score
+      junction$sample=i
+      junctions=rbind(junctions,junction)
+      samples_valid=c(samples_valid,i)
+    }else{
+      samples_notValid=c(samples_notValid,i)
+    }
+  }
+  
+  if(length(samples_valid)==0)
+    return(list(junctions.tab=NULL,samples_notValid=samples_notValid))
+  
+  junctions$junc_id=paste0(junctions$chrom,":",junctions$start,"-",junctions$end)
+  junctions.tab=junctions[!duplicated(junctions$junc_id),]
+  all_junctions=junctions.tab$junc_id
+  
+  for (i in samples_valid) {
+    d=rep(0,length(all_junctions))
+    names(d)=all_junctions
+    junction=junctions[junctions$sample==i,]
+    depth=junction$nb_raw_aln
+    names(depth)=as.character(junction$junc_id)
+    d[names(depth)]=depth
+    junctions.tab[[i]]=d
+  }
+  
+  junctions.tab$known_junction[junctions.tab$known_junction==1]="known"
+  junctions.tab$known_junction[junctions.tab$known_junction==0]="unknown"
+  junctions.tab$known_junction=as.factor(junctions.tab$known_junction)
+  junctions.tab$anchor=as.factor(junctions.tab$anchor)
+  junctions.tab$genes=as.factor(junctions.tab$genes)
+  junctions.tab=junctions.tab[,-which(colnames(junctions.tab) %in% c("name","score","nb_raw_aln","sample","junc_id","known_donor","known_acceptor"))]
+  junctions.tab$maxReads_AllSamples=apply(as.matrix(junctions.tab[,samples_valid]),1,max)
+  return(list(junctions.tab=junctions.tab,samples_notValid=samples_notValid))
+  
 }
 
-junctions$junc_id=paste0(junctions$chrom,":",junctions$start,"-",junctions$end)
 
 
-junctions.tab=junctions[!duplicated(junctions$junc_id),]
-all_junctions=junctions.tab$junc_id
 
-for (i in files) {
- d=rep(0,length(all_junctions))
- names(d)=all_junctions
- junction=junctions[junctions$sample==i,]
- depth=junction$nb_raw_aln
- names(depth)=as.character(junction$junc_id)
- d[names(depth)]=depth
- junctions.tab[[i]]=d
+
+getlistsamplesFromRunList=function(runList){
+  res=c()
+  for (i in runList) {
+  samples=paste0(i,'/',getSampleListFromAnalysis(i))
+  res=c(res,samples)
+  }
+  return(res)
 }
-
-junctions.tab$known_junction[junctions.tab$known_junction==1]="known"
-junctions.tab$known_junction[junctions.tab$known_junction==0]="unknown"
-
-junctions.tab=junctions.tab[,-which(colnames(junctions.tab) %in% c("name","score","nb_raw_aln","sample","junc_id","known_donor","known_acceptor"))]
-write.table(junctions.tab,paste0(dir_analysis,"/all_junctions_all_samples.tab"),sep = "\t",row.names = F)
-
-
-return(junctions.tab)
-
-}
-
-
-
 
 
 
@@ -266,7 +348,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    gene_transcript,
    principalTranscript,
    transcriptList,
-   groupJunctionsBy="anchor",
+   groupJunctionsBy="status",
    cutoff_depth=80,
    mutations=NULL,
    space_between_samples=5,
@@ -344,7 +426,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    
    ##########"----------------------------------------------------------------------------------------------------------------
    p <- plot_ly() %>% 
-     layout(xaxis =ax , yaxis = ay)%>% 
+     layout(title=paste0("<b>",gene,"</b>"),xaxis =ax , yaxis = ay)%>% 
      layout(plot_bgcolor=plot_bgcolor) %>% 
      layout(paper_bgcolor=paper_bgcolor) %>%
      layout(legend = legende)
@@ -474,7 +556,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                     showlegend = F)
          
          p=add_markers(p,
-                       x = (junction$Start+junction$End)/2,
+                       x = (as.numeric(junction$Start)+as.numeric(junction$End))/2,
                        y = random_y_pos,
                        marker=list(symbol=14,
                                    size=2,
@@ -594,15 +676,20 @@ parserJobStatus=function(analyse_name){
   res$Status[res$Status=="R"]="Running"
   res$Status[res$Status=="Q"]="Waiting"
   res$Status[res$Status=="C"]="Complete"
-  
-  return(res[,c(1,2,6)])
+  res$Results=sapply(res$`Sample Name`,getJunctionsFromSample,analysis=analyse_name)
+  res$Status[paste0(res$Status,res$Results)=="CompleteNot available"]="Failed"
+  return(res[,c(1,2,6,8)])
   
   
 }
 
 getRunStatus=function(run_name){
+  
+  if(!run_name %in% list.files("data/usersData/runs_jobs/"))
+    return(0)
+  
   Status=parserJobStatus(run_name)
-  return(paste0(round(length(Status$Status[Status$Status=="Complete"])/nrow(Status),digits = 2)*100,"%"))
+  return(round(length(Status$Status[Status$Status=="Complete"])/nrow(Status),digits = 2)*100)
 }
 
 
@@ -612,7 +699,7 @@ render_jobStatus=function(run_status){
   run_status$Advanced=shinyInput(actionButton,
                                  nrow(run_status),
                                  'button_',
-                                 label = "More Info",
+                                 label = "Logs",
                                  onclick = 'Shiny.onInputChange(\"select_button_sample_name\",  this.id+"_"+Math.random())',
                                  icon=icon("info-circle"),
                                  class="btn-info")
@@ -645,7 +732,14 @@ render_jobStatus=function(run_status){
           
           formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
           formatStyle(4,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
-          formatStyle("Status",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("Complete","Waiting","Running","Hold"), c("#83a89a","#ba6262","#9095ce","#ceb790"))) )
+          formatStyle("Status",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("Complete","Waiting","Running","Hold","Failed"),
+                                                                                                 c("#83a89a","#ba6262","#9095ce","#ceb790","red"))) %>%
+          formatStyle("Results",
+                      color = "white",
+                      fontWeight = 'bold',
+                      backgroundColor = styleEqual(c("Available","Not available","Only filtered junctions available","Only not filtered junctions available"),
+                                                   c("#83a89a","red","#9095ce","#ceb790"))) ) 
+
 }
 
 
@@ -654,8 +748,9 @@ removeAnalysis=function(run_name){
   
   jobs=readRDS(paste0("data/usersData/runs_jobs/",run_name))
   killJob(URLencode(paste0(jobs,collapse = " ")))
-  removeAnalysis_FS(run_name)
+  try(removeAnalysis_FS(run_name))
   file.remove(paste0("data/usersData/runs_jobs/",run_name))
-    return(T)
+  
+  return(T)
   
     }
