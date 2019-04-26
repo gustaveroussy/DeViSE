@@ -61,6 +61,16 @@ actionButtonInputs=function(len, id,label, icons=NULL,class_btns, ...) {
 }
 
 
+actionLinkInputs=function(len, id,label, icons=NULL,class_btns, ...) {
+  inputs <- character(len)
+  for (i in seq_len(len)) {
+    inputs[i] <- as.character(actionLink(paste0(id, i),label[i],icon=icon(icons[i]),class=class_btns[i],...))
+  }
+  inputs
+}
+
+
+
 getJunctionFromExons=function(bed){
   
   junctions=data.frame()
@@ -287,9 +297,9 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
      colors[x=="N"]="#E41A1C"
      
    }else{
-     colors=rep("#e41a1c",length(x))
+     colors=rep("red",length(x))
      names(colors)=x
-     colors[x=="known"]="#999999"
+     colors[x=="known"]="blue"
    }
    
    return(colors)
@@ -299,7 +309,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
  generate_colors=function(n=2){
    require(RColorBrewer)
    color = brewer.pal(9, "Set1")
-   color=rep(color[-6],n)
+   color=rep(sample(color[-6],size = 4),n)
    return(color[1:n])
  }
  
@@ -351,8 +361,8 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    groupJunctionsBy="status",
    cutoff_depth=80,
    mutations=NULL,
-   space_between_samples=5,
-   random_y=0.3
+   space_between_samples=5
+   # random_y=0.3
  ){
    ####--------------------------------------------------------------------------------------
    
@@ -426,7 +436,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    
    ##########"----------------------------------------------------------------------------------------------------------------
    p <- plot_ly() %>% 
-     layout(title=paste0("<b>",gene,"</b>"),xaxis =ax , yaxis = ay)%>% 
+     layout(title=paste0("<b>","Selected gene: [ ",gene," ]</b>"),xaxis =ax , yaxis = ay)%>% 
      layout(plot_bgcolor=plot_bgcolor) %>% 
      layout(paper_bgcolor=paper_bgcolor) %>%
      layout(legend = legende)
@@ -442,6 +452,8 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    exons_colors=generate_colors(length(y_ticktext))
    names(exons_colors)=c(transcriptList,samples)
    break_points=c()
+   showlegend=c(T,T)
+   names(showlegend)=c("known","unknown")
    for (t in rev(c(transcriptList,samples))) {
      
      if(t %in% transcriptList) {
@@ -465,7 +477,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                     legendgroup=t,
                     showlegend = F)
      
-     showlegend=T
+    
      for (i in 1:nrow(exons)) {
        
        if(exons$strand[1]=="-"){
@@ -489,7 +501,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                       color=exons_colors[t],
                       name=nm,
                       legendgroup=t,
-                      showlegend = showlegend)
+                      showlegend = F)
        
        p=add_text(p,x = (exons$start[i]+exons$end[i])/2,
                   y=y_tickvals[t],
@@ -497,8 +509,6 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                   text=num_exon,
                   legendgroup=t,
                   showlegend = F)
-       showlegend=F
-       
        
        
      }
@@ -510,64 +520,65 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
        
        if(nrow(junction)>0){
          
-         random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),1-random_y,1)
-         
-         if(groupJunctionsBy=="anchor"){
-           colors=getcolorFromgroup(junction$anchor)
-           group=names(colors)
+           # random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),1-random_y,1)
+           random_y_pos=y_tickvals[i]+space_between_samples*0.8*log(junction$Depth)/max(log(junction$Depth))
            
-         }else{
            colors=getcolorFromgroup(junction$status,by = "status")
            group=names(colors)
+         
+         for (junc in 1:nrow(junction)) {
            
-         }
          
          p=add_segments(p ,
-                        x = junction$Start,
+                        x = junction$Start[junc],
                         y = y_tickvals[i],
-                        xend = (junction$Start+junction$End)/2,
-                        yend = random_y_pos,
-                        line = list(width = 2,color=colors),
-                        color=colors,
-                        legendgroup=paste(group,i),
-                        name=group,
-                        showlegend=T
+                        xend = (junction$Start[junc]+junction$End[junc])/2,
+                        yend = random_y_pos[junc],
+                        line = list(width = 2,color=colors[junc]),
+                        color=colors[junc],
+                        legendgroup=junction$status[junc],
+                        name=junction$status[junc],
+                        showlegend=showlegend[junction$status[junc]]
          )
+         showlegend[junction$status[junc]]=F
+   
+         
          p=add_segments(p ,
-                        x = (junction$Start+junction$End)/2,
-                        y =random_y_pos,
-                        xend = junction$End,
+                        x = (junction$Start[junc]+junction$End[junc])/2,
+                        y =random_y_pos[junc],
+                        xend = junction$End[junc],
                         yend = y_tickvals[i],
-                        line = list(width = 2,color=colors),
-                        color=colors,
-                        name=group,
-                        legendgroup=paste(group,i),
+                        color=colors[junc],
+                        line = list(width = 2,color=colors[junc]),
+                        name=junction$status[junc],
+                        legendgroup=junction$status[junc],
                         showlegend=F
          )
          
          
          
-         p=add_text(p,x= (junction$Start+junction$End)/2,
-                    y=random_y_pos,
-                    textfont = list( size = 10,color="black"),
-                    text=junction$Depth,
-                    name=colors,
-                    legendgroup=paste(group,i),
+         p=add_text(p,x= (junction$Start[junc]+junction$End[junc])/2,
+                    y=random_y_pos[junc],
+                    textfont = list( size = 10,color=colors[junc]),
+                    text=junction$Depth[junc],
+                    color=colors[junc],
+                    legendgroup=junction$status[junc],
                     showlegend = F)
          
          p=add_markers(p,
-                       x = (as.numeric(junction$Start)+as.numeric(junction$End))/2,
-                       y = random_y_pos,
+                       x = (junction$Start[junc]+junction$End[junc])/2,
+                       y = random_y_pos[junc],
                        marker=list(symbol=14,
                                    size=2,
-                                   color="blue"),
-                       legendgroup = paste(group,i),
-                       name=group,
-                       text=gettextFromdataframe(junction[,-5]),
+                                   color=colors[junc]),
+                       legendgroup = junction$status[junc],
+                       color=colors[junc],
+                       name=junction$status[junc],
+                       text=gettextFromdataframe(junction[,-5])[junc],
                        showlegend = F
          )
          
-         
+         }
          
        }
        
@@ -627,7 +638,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                  x = seq.int(from = min(break_points),to = max(break_points),by = (max(break_points)-min(break_points))/8),
                  y = min(y_tickvals)-1.5,
                  marker=list(symbol=symbol_stand,
-                             size=10,
+                             size=15,
                              color="blue"),
                  legendgroup = "Strand",
                  showlegend = F
@@ -753,4 +764,193 @@ removeAnalysis=function(run_name){
   
   return(T)
   
-    }
+}
+
+
+loading_css=tags$head(tags$style(HTML('*{
+    margin: 0;
+                                       padding: 0;
+                                       }
+                                       
+                                       body{
+                                       background: #eee;
+                                       }
+                                       
+                                       .circle{
+                                       width: 180px;
+                                       height: 180px;
+                                       border: 10px inset rgb(237, 80, 184);
+                                       display: block;
+                                       position: fixed;
+                                       top: 50%;
+                                       left: 50%;
+                                       margin-left: -100px;
+                                       margin-top: -100px;
+                                       border-radius: 200px;
+                                       -moz-animation: rotate 5s infinitelinear;
+                                       -webkit-animation: rotate 5s infinite linear;
+                                       animation: rotate 5s infinite linear;
+                                       box-shadow: 0 0 5px rgba(0,0,0,0.2);
+                                       }
+                                       
+                                       .circle-small{
+                                       width: 150px;
+                                       height: 150px;
+                                       border: 6px outset rgb(241, 133, 133);
+                                       display: block;
+                                       position: fixed;
+                                       top: 50%;
+                                       left: 50%;
+                                       margin-left: -81px;
+                                       margin-top: -81px;
+                                       border-radius: 156px;
+                                       -moz-animation: rotate-rev 3s infinite linear;
+                                       -webkit-animation: rotate-rev 3s infinite linear;
+                                       animation: rotate-rev 3s infinite linear;
+                                       box-shadow: 0 0 5px rgba(0,0,0,0.2);
+                                       }
+                                       
+                                       .circle-big{
+                                       width: 210px;
+                                       height: 210px;
+                                       border: 4px dotted rgb(241, 133, 133);
+                                       display: block;
+                                       position: fixed;
+                                       top: 50%;
+                                       left: 50%;
+                                       margin-left: -109px;
+                                       margin-top: -109px;
+                                       border-radius: 214px;
+                                       -moz-animation: rotate-rev 10s infinite linear;
+                                       -webkit-animation: rotate-rev 10s infinite linear;
+                                       animation: rotate-rev 10s infinite linear;
+                                       }
+                                       
+                                       .circle-inner{
+                                       width: 200px;
+                                       height: 200px;
+                                       background-color: rgb(241, 133, 133);
+                                       display: block;
+                                       position: fixed;
+                                       top: 50%;
+                                       left: 50%;
+                                       margin-left: -80px;
+                                       margin-top: -80px;
+                                       border-radius: 80px;
+                                       -moz-animation: pulse 1.5s infinite ease-in;
+                                       -webkit-animation: pulse 1.5s infinite ease-in;
+                                       animation: pulse 1.5s infinite ease-in;
+                                       opacity: 1;
+                                       box-shadow: 0 0 5px rgba(0,0,0,0.2);
+                                       }
+                                       
+                                       .circle-inner-inner{
+                                       width: 100px;
+                                       height: 100px;
+                                       background-color: rgb(74,124,134);
+                                       display: block;
+                                       position: fixed;
+                                       top: 50%;
+                                       left: 50%;
+                                       margin-left: -50px;
+                                       margin-top: -50px;
+                                       border-radius: 100px;
+                                       -moz-animation: pulse 1.5s infinite ease-in;
+                                       -webkit-animation: pulse 1.5s infinite ease-in;
+                                       animation: pulse 1.5s infinite ease-in;
+                                       box-shadow: 0 0 5px rgba(0,0,0,0.2);
+                                       }
+                                       
+                                       
+                                       /*==============ANIMATIONS=================*/
+                                       
+                                       /*==============ROTATE=====================*/
+                                       
+                                       @-moz-keyframes rotate{
+                                       0% {-moz-transform: rotate(0deg);}
+                                       100% {-moz-transform: rotate(360deg);}
+                                       }
+                                       
+                                       @-webkit-keyframes rotate{
+                                       0% {-webkit-transform: rotate(0deg);}
+                                       100% {-webkit-transform: rotate(360deg);}
+                                       }
+                                       
+                                       @keyframes rotate{
+                                       0% {transform: rotate(0deg);}
+                                       100% {transform: rotate(360deg);}
+                                       }
+                                       
+                                       /*==============ROTATE-REV=================*/
+                                       
+                                       @-moz-keyframes rotate-rev{
+                                       0% {-moz-transform: rotate(0deg);}
+                                       100% {-moz-transform: rotate(-360deg);}
+                                       }
+                                       
+                                       @-webkit-keyframes rotate-rev{
+                                       0% {-webkit-transform: rotate(0deg);}
+                                       100% {-webkit-transform: rotate(-360deg);}
+                                       }
+                                       
+                                       @keyframes rotate-rev{
+                                       0% {transform: rotate(0deg);}
+                                       100% {transform: rotate(-360deg);}
+                                       }
+                                       
+                                       /*==============PULSE======================*/
+                                       
+                                       @-moz-keyframes pulse{
+                                       0% {
+                                       -moz-transform: scale(0.1);
+                                       opacity: 0.2;
+                                       }
+                                       50% {
+                                       -moz-transform: scale(1);
+                                       opacity: 0.8;
+                                       }
+                                       100% {
+                                       -moz-transform: scale(0.1);
+                                       opacity: 0.2;
+                                       }
+                                       }
+                                       
+                                       @-webkit-keyframes pulse{
+                                       0% {
+                                       -webkit-transform: scale(0.1);
+                                       opacity: 0.2;
+                                       }
+                                       50% {
+                                       -webkit-transform: scale(1);
+                                       opacity: 0.8;
+                                       }
+                                       100% {
+                                       -webkit-transform: scale(0.1);
+                                       opacity: 0.2;
+                                       }
+                                       }
+                                       
+                                       @keyframes pulse{
+                                       0% {
+                                       transform: scale(0.1);
+                                       opacity: 0.2;
+                                       }
+                                       50% {
+                                       transform: scale(1);
+                                       opacity: 0.8;
+                                       }
+                                       100% {
+                                       transform: scale(0.1);
+                                       opacity: 0.2;
+                                       }
+                                       }'
+  )))
+
+
+
+
+loading_html= HTML( '<div class="circle">  </div>
+                                <div class="circle-small"></div>
+                                <div class="circle-big"></div>
+                                <div class="circle-inner-inner"></div>
+                                <div class="circle-inner"> <h1> <b> Please wait <b> </h1></div>')

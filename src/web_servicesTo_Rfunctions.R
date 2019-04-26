@@ -56,17 +56,17 @@ getJunctionsFromSample=function(sample,analysis,type="STATUS"){
   
   if(type=="STATUS"){
     
-    if(junc$All_junctions!="all junctions file does not exist for this sample" && 
-       junc$filtered_junctions!="filtered junctions file does not exist for this sample"){
+    if(length(junc$All_junctions)>1 && 
+       length(junc$filtered_junctions)>1){
       
       return("Available")
     }
     
-    if(junc$All_junctions!="all junctions file does not exist for this sample"){
+    if(length(junc$All_junctions)>1){
       return("Only not filtered junctions available")
     }
     
-    if(junc$filtered_junctions!="filtered junctions file does not exist for this sample"){
+    if(length(junc$filtered_junctions)>1){
       return("Only filtered junctions available")
     }
     
@@ -162,8 +162,9 @@ getDesign=function(fastqList,endswith="_001.fastq.gz"){
 
 
 getTimestamp=function(analysis){
-  
-  return(fromJSON(paste0(web_services$host,web_services$getTimestamp,"?analysis=",analysis))$Timestamp)
+  date=NA
+  try({(date=fromJSON(paste0(web_services$host,web_services$getTimestamp,"?analysis=",analysis))$Timestamp)},silent = T)
+  return(date)
   
 }
 

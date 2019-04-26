@@ -109,20 +109,19 @@ shinyServer(
     
 
   ########## update annotations files ----------------------------------------------------------------------------------
-    observe({
-      
-      gtf_list=list.files("data/appData/public_annotation",pattern = ".gtf",full.names = T)
-      
-      if(length(gtf_list)>0){
-      val=paste0(getwd(),"/",gtf_list)
-      names(val)=basename(val)
-      GTFs$values=val
-      print(GTFs$values)
-      updateSelectInput(session,inputId = "annotation_public_gtf",choices = names(GTFs$values))
-      }
-      
-    })
-    
+    # observe({
+    #   
+    #   gtf_list=list.files("data/appData/public_annotation",pattern = ".gtf",full.names = T)
+    #   
+    #   if(length(gtf_list)>0){
+    #   val=paste0(getwd(),"/",gtf_list)
+    #   names(val)=basename(val)
+    #   GTFs$values=val
+    #   updateSelectInput(session,inputId = "annotation_public_gtf",choices = names(GTFs$values))
+    #   }
+    #   
+    # })
+    # 
  ###-------------------------------run junction calling------------------------------------------------------------------
     
 
@@ -133,19 +132,18 @@ shinyServer(
       ##------preparation des runs ----
       runlist=getRunList()
       analysislist=getAnalysisList()
-      runs=data.frame(name=unique(c(runlist,analysislist)))
+      runs=data.frame(name=unique(c(runlist,analysislist)),Date="",stringsAsFactors = F)
       runs$`Raw data`="not available"
       runs$`Raw data`[runs$name %in% runlist]="available"
-      runs$Date="" ##### à revoir
       runs$Analysis="Waiting"
       runs$Analysis[runs$name %in% analysislist]="launched"
-      runs$Date[runs$name %in% analysislist]=sapply( runs$name[runs$name %in% analysislist],getTimestamp)
+      runs$Date[runs$name %in% analysislist]=sapply(runs$name[runs$name %in% analysislist],getTimestamp)
       RUNS$values=runs
-      class_btns=rep("btn-danger",nrow(runs))
+      class_btns=rep("btn-success",nrow(runs))
       class_btns[runs$name %in% analysislist]="btn-info"
       label_btns=rep("Submit  the  analysis",nrow(runs))
       label_btns[runs$name %in% analysislist]="Details of analysis"
-      icons=rep("eye",nrow(runs))
+      icons=rep("info-circle",nrow(runs))
       icons[!runs$name %in% analysislist]="telegram-plane"
       
       ################################
@@ -157,7 +155,17 @@ shinyServer(
                                         icons = icons,
                                         onclick = 'Shiny.onInputChange(\"select_button_advanced\",  this.id+"_"+Math.random())'
                                       )
+      indexs=which(runs$Analysis != "launched")
       
+      class_btns=rep("",nrow(runs))
+      runs$name=actionLinkInputs( len = nrow(runs),
+                                        id = 'button2_',
+                                        label = runs$name,
+                                        class_btns = class_btns,
+                                        icons = rep("eye",nrow(runs)),
+                                        onclick = 'Shiny.onInputChange(\"select_button_viz\",  this.id+"_"+Math.random())'
+      )
+      runs$name[indexs]=RUNS$values$name[indexs]
 
       datatable(runs[order(runs$Date,decreasing = T),],
                 selection = 'none',
@@ -178,8 +186,8 @@ shinyServer(
                 ),
                 rownames = F)%>%
         
-        formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
-        formatStyle(3,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+        # formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+        formatStyle(2,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
         
         formatStyle("Raw data",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("available","not available"), c("#83a89a","#ba6262")))  %>%
         formatStyle("Analysis",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#83a89a","#ba6262"))) %>% 
@@ -206,6 +214,13 @@ shinyServer(
             hot_col("sample_id",type = "autocomplete", source = letters)
           
         }) 
+        
+        observeEvent(input$select_button_viz,{
+          selectedRow <- as.numeric(strsplit(input$select_button_viz, "_")[[1]][2]) 
+          run_name=RUNS$values$name[selectedRow]
+          updateSelectInput(session,inputId ="select_analysis",label = "Select one ore multiple analysis",choices = getAnalysisList(),selected = run_name )
+          updateTabItems(session, "tabs", selected = "m2")
+        })    
     
     observeEvent(input$select_button_advanced,{
       show("loading")
@@ -263,16 +278,16 @@ shinyServer(
         enable("re_run_analysis_btn")
         RUNS$samples_to_resubmit=RUNS$status$`Sample Name`[input$samples_monitoringDT_rows_selected]
         design=NULL
-        try({design=getDesign(getFileListFromRun(RUNS$selected,".fastq.gz"))})
+        try({design=getDesign(getFileListFromRun(isolate({RUNS$selected}),".fastq.gz"))})
         
         if(!input$re_runAll_analysis){
-         RUNS$design=design[design$sample_id %in% RUNS$samples_to_resubmit,]
+          isolate({RUNS$design=design[design$sample_id %in% RUNS$samples_to_resubmit,]})
         }else{
          updateActionButton(session = session,inputId = "re_run_analysis_btn","Resubmit all samples",icon = icon("redo"))
-         RUNS$design=design
+         isolate({RUNS$design=design})
         }
         output$title_run_deviseModal=renderUI(HTML(paste0("<h3> <font color='black'><b>Resubmit  analysis: </b> </font>",RUNS$selected," </h3>")))
-        RUNS$type="correction"
+        isolate({RUNS$type="correction"})
       }
       
     })
@@ -376,8 +391,10 @@ shinyServer(
  
          junctions=aggregate_junctions(samplesList = input$select_samples_junc,type = input$type_junctions)
          analyse$junctions=junctions$junctions.tab
+         analyse$junctions=analyse$junctions[analyse$junctions$gene!="NA",]
+         analyse$junctions=analyse$junctions[!is.na(analyse$junctions$gene),]
          
-         if(!is.null(junctions$junctions.tab)){
+         if(!is.null(analyse$junctions)){
            
              analyse$junctions=analyse$junctions[analyse$junctions$maxReads_AllSamples>=input$cuttof_depth,]
              colnames(analyse$junctions)[1:11]=str_replace_all(colnames(analyse$junctions),pattern = "_",replacement = " ")[1:11]
@@ -397,19 +414,17 @@ shinyServer(
            output$samples_invalid=renderUI(br())
          }
          
-         
          }
          
          hide("loading")
        })
     
-       # observe({
-       #   
-       #   if(!is.na(input$cuttof_depth))
-       #     analyse$junctions=analyse$junctions[analyse$junctions$maxReads_AllSamples>=input$cuttof_depth,]
-       #   
-       # })
-       
+       observeEvent(input$DT_All_samples_rows_selected,{
+         
+         updateSelectInput(session,inputId = "select_gene",choices = unique(analyse$junctions$genes[!str_detect(analyse$junctions$genes,pattern = ",")]),selected = analyse$junctions$genes[input$DT_All_samples_rows_selected])
+         
+       })
+  
        output$DT_All_samples=renderDataTable({
          
          datatable(analyse$junctions[,-12],
@@ -446,7 +461,6 @@ shinyServer(
     observeEvent(input$select_gene,{
      
        if(input$select_gene!=""){
-        print(head(analyse$junctions))
         transcripts=analyse$junctions$transcripts[analyse$junctions$genes==input$select_gene]
         transcripts=as.character(transcripts[!is.na(transcripts)])
         
@@ -509,6 +523,19 @@ shinyServer(
 
 ##### Plotly ------------------------------------------------------------------------------------------------------------
     
+    observe({
+
+      if(is.null(input$select_transcript)){
+        transcriptList=c()
+      }else{
+        transcriptList=input$select_transcript
+      }
+
+      height=(length(input$select_samples)+length(transcriptList))*100+300
+      updateNumericInput(session = session ,inputId = "Plot_height",value = height)
+      
+    })
+    
     observeEvent(input$plot_junction_btn,{
       show("loading")
       
@@ -525,15 +552,16 @@ shinyServer(
          
          ){
         
-        showElement(id = "viz_plot",anim = T)
-       
-        output$plot_junct=renderUI(shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = input$Plot_height)))
-  
         if(is.null(input$select_transcript)){
           transcriptList=c()
         }else{
           transcriptList=input$select_transcript
         }
+        
+        showElement(id = "viz_plot",anim = T)
+        output$plot_junct=renderUI(shinycssloaders::withSpinner(plotlyOutput("splice_graph",height = isolate(input$Plot_height))))
+  
+
         
         output$message_plot=renderText("")
         
@@ -545,9 +573,8 @@ shinyServer(
                         principalTranscript =input$select_principal_transcript,
                         transcriptList = transcriptList,
                         groupJunctionsBy = "status",
-                        cutoff_depth = 1,
-                        mutations =getMutationFromAnalysis(paste0("data/usersData/results/",analyse$name)), 
-                        random_y = input$disp_level
+                        cutoff_depth = input$cutoff_junc_plot,
+                        mutations =getMutationFromAnalysis(paste0("data/usersData/results/",analyse$name))
           )
         
         output$splice_graph=renderPlotly({

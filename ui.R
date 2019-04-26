@@ -61,184 +61,7 @@ body <-  dashboardBody(
   
   
   ### laoding css -------------------------------------------------
-  tags$head(tags$style(HTML('*{
-    margin: 0;
-  padding: 0;
-  }
-  
-  body{
-  background: #eee;
-  }
-  
-  .circle{
-  width: 180px;
-  height: 180px;
-  border: 10px inset rgb(237, 80, 184);
-  display: block;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  margin-left: -100px;
-  margin-top: -100px;
-  border-radius: 200px;
-  -moz-animation: rotate 5s infinitelinear;
-  -webkit-animation: rotate 5s infinite linear;
-  animation: rotate 5s infinite linear;
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
-  }
-  
-  .circle-small{
-  width: 150px;
-  height: 150px;
-  border: 6px outset rgb(241, 133, 133);
-  display: block;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  margin-left: -81px;
-  margin-top: -81px;
-  border-radius: 156px;
-  -moz-animation: rotate-rev 3s infinite linear;
-  -webkit-animation: rotate-rev 3s infinite linear;
-  animation: rotate-rev 3s infinite linear;
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
-  }
-  
-  .circle-big{
-  width: 210px;
-  height: 210px;
-  border: 4px dotted rgb(241, 133, 133);
-  display: block;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  margin-left: -109px;
-  margin-top: -109px;
-  border-radius: 214px;
-  -moz-animation: rotate-rev 10s infinite linear;
-  -webkit-animation: rotate-rev 10s infinite linear;
-  animation: rotate-rev 10s infinite linear;
-  }
-  
-  .circle-inner{
-  width: 200px;
-  height: 200px;
-  background-color: rgb(241, 133, 133);
-  display: block;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  margin-left: -80px;
-  margin-top: -80px;
-  border-radius: 80px;
-  -moz-animation: pulse 1.5s infinite ease-in;
-  -webkit-animation: pulse 1.5s infinite ease-in;
-  animation: pulse 1.5s infinite ease-in;
-  opacity: 1;
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
-  }
-  
-  .circle-inner-inner{
-  width: 100px;
-  height: 100px;
-  background-color: rgb(74,124,134);
-  display: block;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  margin-left: -50px;
-  margin-top: -50px;
-  border-radius: 100px;
-  -moz-animation: pulse 1.5s infinite ease-in;
-  -webkit-animation: pulse 1.5s infinite ease-in;
-  animation: pulse 1.5s infinite ease-in;
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
-  }
-  
-  
-  /*==============ANIMATIONS=================*/
-  
-  /*==============ROTATE=====================*/
-  
-  @-moz-keyframes rotate{
-  0% {-moz-transform: rotate(0deg);}
-  100% {-moz-transform: rotate(360deg);}
-  }
-  
-  @-webkit-keyframes rotate{
-  0% {-webkit-transform: rotate(0deg);}
-  100% {-webkit-transform: rotate(360deg);}
-  }
-  
-  @keyframes rotate{
-  0% {transform: rotate(0deg);}
-  100% {transform: rotate(360deg);}
-  }
-  
-  /*==============ROTATE-REV=================*/
-  
-  @-moz-keyframes rotate-rev{
-  0% {-moz-transform: rotate(0deg);}
-  100% {-moz-transform: rotate(-360deg);}
-  }
-  
-  @-webkit-keyframes rotate-rev{
-  0% {-webkit-transform: rotate(0deg);}
-  100% {-webkit-transform: rotate(-360deg);}
-  }
-  
-  @keyframes rotate-rev{
-  0% {transform: rotate(0deg);}
-  100% {transform: rotate(-360deg);}
-  }
-  
-  /*==============PULSE======================*/
-  
-  @-moz-keyframes pulse{
-  0% {
-  -moz-transform: scale(0.1);
-  opacity: 0.2;
-  }
-  50% {
-  -moz-transform: scale(1);
-  opacity: 0.8;
-  }
-  100% {
-  -moz-transform: scale(0.1);
-  opacity: 0.2;
-  }
-  }
-  
-  @-webkit-keyframes pulse{
-  0% {
-  -webkit-transform: scale(0.1);
-  opacity: 0.2;
-  }
-  50% {
-  -webkit-transform: scale(1);
-  opacity: 0.8;
-  }
-  100% {
-  -webkit-transform: scale(0.1);
-  opacity: 0.2;
-  }
-  }
-  
-  @keyframes pulse{
-  0% {
-  transform: scale(0.1);
-  opacity: 0.2;
-  }
-  50% {
-  transform: scale(1);
-  opacity: 0.8;
-  }
-  100% {
-  transform: scale(0.1);
-  opacity: 0.2;
-  }
-  }'
-  ))),
+  loading_css,
   
   
   bsModal(id="run_deviseModal",
@@ -253,11 +76,7 @@ body <-  dashboardBody(
                                        text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
               helpText("Click on the button to run DeViSE analysis."),
               hidden(div(id="loading_modal",
-                         HTML( '<div class="circle">  </div>
-                                <div class="circle-small"></div>
-                                <div class="circle-big"></div>
-                                <div class="circle-inner-inner"></div>
-                                <div class="circle-inner"> <h1> <b> Please wait <b> </h1></div>')
+                         loading_html
                          ))
           )),
   
@@ -279,11 +98,7 @@ body <-  dashboardBody(
               br(),
               shinycssloaders::withSpinner(uiOutput("log_files")),
               hidden(div(id="loading_modal2",
-                         HTML(' <div class="circle">  </div>
-                                <div class="circle-small"></div>
-                                <div class="circle-big"></div>
-                                <div class="circle-inner-inner"></div>
-                                <div class="circle-inner"> <h1> <b> Please wait <b> </h1></div>')
+                         loading_html
               ))
  
           )
@@ -306,7 +121,7 @@ body <-  dashboardBody(
     tabItem(tabName = "m1",
             
           div(id="login_ui",  
-            fluidRow(column(width=4, offset = 4,HTML('<h1 <b> DeViSE: Detection and Visualization of Splicing Events</b> </h1>')),
+            fluidRow(column(width=4, offset = 4,HTML('<h1 <b> <font color="red">DeViSE</font>: <font color="red">De</font>tection and <font color="red">Vi</font>sualization of <font color="red">S</font>plicing <font color="red"> E</font>vents</b> </h1>')),
                      column(width=4, offset = 4,h4("Sign in:"),
                             wellPanel(id = "login",
                                       textInput(".username", "Username:"),
@@ -344,7 +159,7 @@ body <-  dashboardBody(
                   status="danger",
                   width = 12 ,
                   column(width =12,
-                    column(width = 6,selectInput(inputId ="select_analysis",label = "Select an analysis",multiple = T,choices = getAnalysisList())),
+                    column(width = 6,selectInput(inputId ="select_analysis",label = "Select one ore multiple analysis",multiple = T,choices = getAnalysisList())),
                     column(width = 6,selectInput(inputId ="type_junctions",label = "Select a type of results",multiple = F,choices =c("FILTERED","ALL")))
                   ),
                   column(width =12,
@@ -409,7 +224,7 @@ body <-  dashboardBody(
                           column(width =12,
                                  
                                  column(width = 6,numericInput(inputId ="Plot_height",label = "Plot height",value=500, min = 200, max = NA, step = 10)),
-                                 column(width = 6,numericInput(inputId ="disp_level",label = "Junctions: dispersion level(scale 0-1)",value=0.3, min = 0, max = 1, step = 0.1))
+                                 column(width = 6,numericInput(inputId ="cutoff_junc_plot",label = "Minimum number of reads to plot a junction",value=1, min = 1, step = 1))
                                  
                           )
                           ),
@@ -428,11 +243,7 @@ body <-  dashboardBody(
 
     ),
   hidden(div(id="loading",
-             HTML('<div class="circle">  </div>
-                    <div class="circle-small"></div>
-                    <div class="circle-big"></div>
-                    <div class="circle-inner-inner"></div>
-                    <div class="circle-inner"> <h1> <b> Please wait <b> </h1></div>')
+             loading_html
   )),
   
   HTML("   <center>
