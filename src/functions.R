@@ -297,9 +297,10 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
      colors[x=="N"]="#E41A1C"
      
    }else{
-     colors=rep("red",length(x))
+     colors=rep("green",length(x))
      names(colors)=x
      colors[x=="known"]="blue"
+     colors[x=="unknown"]="red"
    }
    
    return(colors)
@@ -309,7 +310,9 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
  generate_colors=function(n=2){
    require(RColorBrewer)
    color = brewer.pal(9, "Set1")
-   color=rep(sample(color[-6],size = 4),n)
+   cols=c("#b300f9","#a0b25e","#5eb2aa","#b2745e")
+   # color=rep(sample(color[-6],size = 4),n)
+   color=rep(cols,n)
    return(color[1:n])
  }
  
@@ -352,17 +355,17 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
  
  viz_junctions=function(
    junctions,
-   samples=c("56531","42814","56970"),
+   # selected_junc=NULL,
+   samples,
    exonGTF,
    gene,
    gene_transcript,
    principalTranscript,
    transcriptList,
    groupJunctionsBy="status",
-   cutoff_depth=80,
+   cutoff_depth=1,
    mutations=NULL,
    space_between_samples=5
-   # random_y=0.3
  ){
    ####--------------------------------------------------------------------------------------
    
@@ -454,6 +457,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    break_points=c()
    showlegend=c(T,T)
    names(showlegend)=c("known","unknown")
+   showlegend_event=T
    for (t in rev(c(transcriptList,samples))) {
      
      if(t %in% transcriptList) {
@@ -520,11 +524,10 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
        
        if(nrow(junction)>0){
          
-           # random_y_pos=y_tickvals[i]+space_between_samples*0.75*runif(nrow(junction),1-random_y,1)
            random_y_pos=y_tickvals[i]+space_between_samples*0.8*log(junction$Depth)/max(log(junction$Depth))
-           
            colors=getcolorFromgroup(junction$status,by = "status")
            group=names(colors)
+           
          
          for (junc in 1:nrow(junction)) {
            
@@ -579,24 +582,22 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
          )
          
          }
-         
+           
        }
        
        if(!is.null(mutations)){
          
-         events=mutations[mutations$sample==t,]
+         events=mutations[t,]
          events=events[events$gene==gene,]
-         showlegend=T
-         
          if(nrow(events)>0){
            
            for (mut in 1:nrow(events)) {
              
              mutation=events[mut,]
-             p=add_markers(p,x = c(mutation$start,mutation$end),y=y_tickvals[i],text=gettextFromdataframe(mutation),marker=list(color="red",symbol=20,size=10),name=paste0("DNA events (Mutations/Indels)"),showlegend=showlegend)
-             showlegend=F
+             p=add_markers(p,x = c(mutation$start,mutation$end),y=y_tickvals[i],text=gettextFromdataframe(mutation),marker=list(color="#f9b300",symbol=20,size=15),legendgroup="event_mutations",name=paste0("DNA events (Mutations/Indels)"),showlegend=showlegend_event)
+             showlegend_event=F
              if(mutation$start-mutation$end!=0){
-               p=add_segments(p ,x = mutation$start, y = y_tickvals[i], xend =  mutation$end, yend = y_tickvals[i], line = list(width = 2,color="red"),name=paste0("DNA events (Mutations/Indels)"))
+               p=add_segments(p ,x = mutation$start, y = y_tickvals[i], xend =  mutation$end, yend = y_tickvals[i], line = list(width = 2,color="#f9b300"),legendgroup="event_mutations",name=paste0("DNA events (Mutations/Indels)"),showlegend=showlegend_event)
              }
              
            }

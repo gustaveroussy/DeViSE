@@ -36,14 +36,14 @@ SESSIONs<- reactiveValues(count= 0 )
 SESSIONs$lastclosing<- as.numeric(Sys.time())
 autoInvalidate <- reactiveTimer( 100000 )
 t=30 # 30 seconde
-# observe({
-#   autoInvalidate()
-#   # tuer le conteneur s'il n'y a aucune session ouverte apres t seconde
-#   if (SESSIONs$count== 0 && (SESSIONs$lastclosing+ t )< as.numeric(Sys.time()) ){
-#     
-#     system(paste0( "docker rm -f ",system("hostname " ,intern = TRUE)))
-#   }
-# })
+observe({
+  autoInvalidate()
+  # tuer le conteneur s'il n'y a aucune session ouverte apres t seconde
+  if (SESSIONs$count== 0 && (SESSIONs$lastclosing+ t )< as.numeric(Sys.time()) ){
+
+    system(paste0( "docker rm -f ",system("hostname " ,intern = TRUE)))
+  }
+})
 
 ###### END observe docker --------------------------------------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ shinyServer(
     isolate({
       SESSIONs$count <- SESSIONs$count + 1
       if(SESSIONs$count>1)
-        shinyjs::runjs(paste0("window.location.replace('http://phoenix.intra.igr.fr:8080/')"))
+        shinyjs::runjs(paste0("window.location.replace('http://phoenix.intra.igr.fr:3000/')"))
     })
      
       session$onSessionEnded( function(){
@@ -74,8 +74,7 @@ shinyServer(
       output$log_files=renderUI(br())
       logg=fromJSON(paste0("http://31.10.13.26:8080/Authentification/api/User?login=",input$.username,"&password=",input$.password))
       
-      # if(logg$identification=="Successful identification"){
-        if(T){
+      if(logg$identification=="Successful identification"){
           
         shinyjs::removeClass(selector = "body", class = "sidebar-collapse")
         shinyjs::show(id = "application", anim = F)
@@ -138,6 +137,8 @@ shinyServer(
       runs$Analysis="Waiting"
       runs$Analysis[runs$name %in% analysislist]="launched"
       runs$Date[runs$name %in% analysislist]=sapply(runs$name[runs$name %in% analysislist],getTimestamp)
+      runs=runs[order(runs$Date,decreasing = T),]
+      runs=runs[order(runs$Analysis,decreasing = T),]
       RUNS$values=runs
       class_btns=rep("btn-success",nrow(runs))
       class_btns[runs$name %in% analysislist]="btn-info"
@@ -167,7 +168,9 @@ shinyServer(
       )
       runs$name[indexs]=RUNS$values$name[indexs]
 
-      datatable(runs[order(runs$Date,decreasing = T),],
+      
+      
+      datatable(runs,
                 selection = 'none',
                 escape = FALSE,
                 filter = list(position = 'top',
@@ -189,8 +192,8 @@ shinyServer(
         # formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
         formatStyle(2,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
         
-        formatStyle("Raw data",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("available","not available"), c("#83a89a","#ba6262")))  %>%
-        formatStyle("Analysis",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#83a89a","#ba6262"))) %>% 
+        formatStyle("Raw data",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("available","not available"), c("#83a89a","#ba6262")))  %>%
+        formatStyle("Analysis",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#9c96cc","#efbd7f"))) %>% 
         formatStyle("Progress (%)",
                       background = styleColorBar(c(100,0), '#adffb9'),
                       backgroundSize = '98% 88%',
@@ -209,9 +212,8 @@ shinyServer(
     
         output$design_devise=renderRHandsontable({
           input$select_button_advanced
-           rhandsontable(RUNS$design,width = "100%") %>%
-            
-            hot_col("sample_id",type = "autocomplete", source = letters)
+           rhandsontable(RUNS$design,width = "100%",readOnly = T)
+            # hot_col("sample_id",type = "autocomplete", source = letters)
           
         }) 
         
@@ -423,6 +425,7 @@ shinyServer(
          
          updateSelectInput(session,inputId = "select_gene",choices = unique(analyse$junctions$genes[!str_detect(analyse$junctions$genes,pattern = ",")]),selected = analyse$junctions$genes[input$DT_All_samples_rows_selected])
          
+         
        })
   
        output$DT_All_samples=renderDataTable({
@@ -564,22 +567,25 @@ shinyServer(
 
         
         output$message_plot=renderText("")
+        junctions=analyse$junctions
+        junctions$`known junction`=as.character(junctions$`known junction`)
+        junctions$`known junction`[isolate(input$DT_All_samples_rows_selected)]=paste0(junctions$`known junction`[isolate(input$DT_All_samples_rows_selected)],"(selected)")
+        mutations=NULL
         
-        p=viz_junctions(junctions =analyse$junctions,
-                        samples =input$select_samples,
-                        exonGTF = hg19_exons ,
-                        gene = input$select_gene,
-                        gene_transcript = analyse$current_transcripts[1],
-                        principalTranscript =input$select_principal_transcript,
-                        transcriptList = transcriptList,
-                        groupJunctionsBy = "status",
-                        cutoff_depth = input$cutoff_junc_plot,
-                        mutations =getMutationFromAnalysis(paste0("data/usersData/results/",analyse$name))
+        # try({mutations=hot_to_r(input$mutations_rhandontable)})
+        
+        analyse$plotly=viz_junctions(junctions = junctions,
+                                      samples = input$select_samples,
+                                      exonGTF = hg19_exons ,
+                                      gene = input$select_gene,
+                                      gene_transcript = analyse$current_transcripts[1],
+                                      principalTranscript = input$select_principal_transcript,
+                                      transcriptList = transcriptList,
+                                      groupJunctionsBy = "status",
+                                      cutoff_depth = input$cutoff_junc_plot,
+                                      mutations = mutations
           )
         
-        output$splice_graph=renderPlotly({
-           p
-        })
 
       }else{
         output$message_plot=renderText("Oops !! One or more inputs above are not reported")
@@ -587,6 +593,31 @@ shinyServer(
       hide("loading")
       
     })
+    
+    output$splice_graph=renderPlotly({
+      analyse$plotly
+    })
+    
+    
+    # output$mutations_rhandontable=renderRHandsontable({
+    #   mutations=readRDS("data/usersData/mutations.rds")
+    #   rownames(mutations)=mutations$sample
+    #   mutations=mutations[input$select_samples,]
+    #   print()
+    #   if(nrow(mutations)==0){
+    #     mutations=data.frame(sample=NA, chr=NA, start=NA, end=NA, ref=NA, alt=NA, gene=NA)
+    #     mutations=mutations[1,]
+    #   }else{
+    #     rhandsontable(mutations,width = "100%",rowHeaders = NULL)
+    #   }
+    #   
+    #     
+    # })
 
+    # observe({
+    #   d <- event_data("plotly_click")
+    #   print(d)
+    # })
+     
 #####--------------------------------------------------------------------------------------------------------------------
   })

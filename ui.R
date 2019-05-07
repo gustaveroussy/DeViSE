@@ -207,6 +207,21 @@ body <-  dashboardBody(
 
                       textOutput("message_plot"),
                       tags$head(tags$style("#message_plot{color: red; font-size:1.5em;}")),
+                      # box(icon=icon('eye'),
+                      #     title = "Add mutations",
+                      #     status="danger",
+                      #     collapsible = T,
+                      #     solidHeader = T,
+                      #     width = 12,
+                      #     collapsed = F,
+                      #     shinycssloaders::withSpinner(rhandsontable::rHandsontableOutput("mutations_rhandontable",width = "100%")),
+                      #     actionButton(inputId = "save_mutations","Save changes",icon = icon("save")),
+                      #     tags$style("button#save_mutations {background-color:#d85252; padding: 5px 25px;
+                      #              font-family:Andika, Arial, sans-serif; font-size:1.5em;  letter-spacing:0.05em; text-transform:uppercase ;color:#fff;
+                      #              text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
+                      #     helpText("Click on the button to plot the junction graph.")
+                      # 
+                      # ),
                       
                       box(icon=icon('eye'),
                           title = "Graphic settings",
@@ -215,12 +230,6 @@ body <-  dashboardBody(
                           solidHeader = T,
                           width = 12,
                           collapsed = T,
-                          # column(width =12,
-                          #        
-                          #        column(width = 6,selectInput(inputId ="groupby_status",label = "Junctions groupBy:",choices = c("anchor","status (known/unknown)"),selected = "anchor")),
-                          #        column(width = 6,numericInput(inputId ="cuttof_depth_plot",label = "Minimum number of reads to plot a junction",value=25, min = 0, max = NA, step = 1))
-                          #        
-                          # ),
                           column(width =12,
                                  
                                  column(width = 6,numericInput(inputId ="Plot_height",label = "Plot height",value=500, min = 200, max = NA, step = 10)),
