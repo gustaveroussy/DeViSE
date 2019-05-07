@@ -743,13 +743,13 @@ render_jobStatus=function(run_status){
             rownames = F)%>%
           
           formatStyle(1,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
-          formatStyle(4,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
-          formatStyle("Status",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("Complete","Waiting","Running","Hold","Failed"),
+          # formatStyle(4,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
+          formatStyle("Status",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("Complete","Waiting","Running","Hold","Failed"),
                                                                                                  c("#83a89a","#ba6262","#9095ce","#ceb790","red"))) %>%
           formatStyle("Results",
-                      color = "white",
+                      color = "black",
                       fontWeight = 'bold',
-                      backgroundColor = styleEqual(c("Available","Not available","Only filtered junctions available","Only not filtered junctions available"),
+                      backgroundColor = styleEqual(c("Available","Not available","Only filtered","Only not filtered"),
                                                    c("#83a89a","red","#9095ce","#ceb790"))) ) 
 
 }

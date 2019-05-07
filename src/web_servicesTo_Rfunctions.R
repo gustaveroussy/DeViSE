@@ -63,11 +63,11 @@ getJunctionsFromSample=function(sample,analysis,type="STATUS"){
     }
     
     if(length(junc$All_junctions)>1){
-      return("Only not filtered junctions available")
+      return("Only not filtered")
     }
     
     if(length(junc$filtered_junctions)>1){
-      return("Only filtered junctions available")
+      return("Only filtered")
     }
     
     return("Not available")
