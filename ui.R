@@ -87,7 +87,7 @@ body <-  dashboardBody(
           size = "large",
 
           div(id="samples_monitoringUI_div",
-              shinycssloaders::withSpinner(DT::DTOutput("samples_monitoringDT")),
+              shinycssloaders::withSpinner(DT::dataTableOutput("samples_monitoringDT")),
               hidden(
                     div(id="samples_re_run_div",
                           checkboxInput("re_runAll_analysis",label = "Resubmit all samples of this analysis."),
