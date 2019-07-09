@@ -1,0 +1,12 @@
+STAR: "/cm/shared/bioinfo/star/2.5a/bin/Linux_x86_64/STAR "
+genome_dir: "/data/bioinfo/Index_DB/STAR/2.5a/Gencode/GRCH37/ReadLen75 "
+genomePath: "/data/bioinfo/Index_DB/Fasta/Gencode/GRCH37/DNA/gencodeV19_dna.fa "
+GTF_path:  "/data/bioinfo/Index_DB/GTF/Gencode/GRCH37/gencodeV19.gtf "
+portcullis: "/cm/shared/bioinfo/portcullis/2019_03_19/bin/portcullis "
+portcullis_param: " --max_length 0 --min_cov 1 "
+regtools: "/cm/shared/bioinfo/regtools/0.5.1/regtools "
+regtools_param: ""
+mode: "cluster" # mode local or cluster
+qsub: "/cm/shared/apps/torque/6.1.1/bin/qsub"
+qsub_param: " -l nodes=1:ppn=12 -l mem=30G  " # if cluster mode,
+samtools: "module load bioinfo/shared/samtools/1.9"

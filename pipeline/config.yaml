@@ -1,0 +1,10 @@
+STAR: STAR
+genome_dir: /home/adnani/Documents/Splicing_pipeline/gencodeV19_dna
+genomePath: /home/adnani/Documents/shiny_project/DeViSE/data/appData/public_annotation/gencodeV19_dna.fa
+GTF_path:  /home/adnani/Documents/shiny_project/DeViSE/data/appData/public_annotation/gencodeV19.gtf
+portcullis: portcullis
+portcullis_param: "--max_length 0 --min_cov 1 "
+regtools: regtools
+regtools_param: ""
+mode: local # mode local or cluster
+qsub_param: ""  # if cluster mode,

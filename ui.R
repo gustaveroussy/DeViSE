@@ -242,7 +242,30 @@ body <-  dashboardBody(
                                    font-family:Andika, Arial, sans-serif; font-size:1.5em;  letter-spacing:0.05em; text-transform:uppercase ;color:#fff;
                                    text-shadow: 0px 1px 10px #000;border-radius: 15px;box-shadow: rgba(0, 0, 0, .55) 0 1px 6px;}"),
                       helpText("Click on the button to plot the junction graph."),
-                      uiOutput("plot_junct")
+                      uiOutput("plot_junct"),
+                      box(icon=icon('eye'),
+                          title = "Statistics",
+                          status="danger",
+                          collapsible = T,
+                          solidHeader = T,
+                          width = 12,
+                          collapsed = T,
+                          HTML('
+                               
+                               <iframe
+                                src=" http://31.10.13.25/JunctionExon/#/"
+                                width="100%" height="600"
+                                sandbox="allow-scripts allow-same-origin">
+                                 <p>
+                                   <a href="http://31.10.13.24/JunctionExon/#/JunctionExon">
+                                     Un lien à utiliser dans les cas où les navigateurs ne supportent
+                                     pas les <i>iframes</i>.
+                                   </a>
+                                 </p>
+                                </iframe>
+                               
+                               ')
+                      )
                       
                   )
                   )
