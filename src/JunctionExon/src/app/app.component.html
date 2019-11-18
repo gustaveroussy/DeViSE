@@ -1,0 +1,59 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+<div class="row content">
+	<div class="col-sm-12">
+		<div>
+			<div class="position"> Gene Symbol <input [(ngModel)] = "geneChoisie" (ngModelChange) = "onChangeGene()"></div>
+			<br>
+			<div class="position"> Exon number <input [(ngModel)] = "exonChoisie" (ngModelChange) = "onChangeExon()"></div>
+			<br>
+			<div *ngIf ="option === 'c'" class="position"> number of Exon <input type="number" [(ngModel)] = "numberExonChoisie" (ngModelChange) = "onChangeNumberExon()"></div>
+			<br>
+			<div *ngIf ="choixOptionJunctionExon == true" class="position">
+				Type of junction 
+				<select class="box petit" [(ngModel)] ="option" (ngModelChange)="onChangeOption()">
+					<option *ngFor="let c of TableauOption; let j = index" [ngValue]="TableauOption[j][1]"> {{c[0]}}</option>
+				</select>
+			</div>
+			<div *ngIf ="option === 'a'">
+				<input type="number" [ngStyle]="circle" 	[(ngModel)]="liaison1" (ngModelChange) = "onChangeliaison1()">
+				<input type="number" [ngStyle]="circle1"  	[(ngModel)]="liaison2" (ngModelChange) = "onChangeliaison2()">
+				<input type="number" [ngStyle]="circle2"	[(ngModel)]="liaison3" (ngModelChange) = "onChangeliaison3()">
+			</div>
+			<div *ngIf ="option === 'b'">
+				<input type="number" [ngStyle]="circle3" 	[(ngModel)]="liaison4" (ngModelChange) = "onChangeliaison4()">
+				<input type="number" [ngStyle]="circle4"  	[(ngModel)]="liaison5" (ngModelChange) = "onChangeliaison5()">
+				<input type="number" [ngStyle]="circle5"	[(ngModel)]="liaison6" (ngModelChange) = "onChangeliaison6()">
+			</div>
+			<div *ngIf ="option === 'c'">
+				<div *ngIf ="affichageC">
+					<div *ngIf ="numberExonChoisie > 0">
+						<input type="number" [ngStyle]="circle6" 	[(ngModel)]="liaison7" (ngModelChange) = "onChangeliaison7()">
+						<input type="number" [ngStyle]="circle7"  	[(ngModel)]="liaison8" (ngModelChange) = "onChangeliaison8()">
+						<input type="number" [ngStyle]="circle8"	[(ngModel)]="liaison9" (ngModelChange) = "onChangeliaison9()">
+					</div>
+				</div>
+			</div>
+			<div *ngIf ="option === 'd'">
+				<input type="number" [ngStyle]="circle9" 	[(ngModel)]="liaison10" (ngModelChange) = "onChangeliaison10()">
+				<input type="number" [ngStyle]="circle10"  	[(ngModel)]="liaison11" (ngModelChange) = "onChangeliaison11()">
+			</div>
+			<div *ngIf ="option === 'e'">
+				<input type="number" [ngStyle]="circle11" 	[(ngModel)]="liaison12" (ngModelChange) = "onChangeliaison12()">
+				<input type="number" [ngStyle]="circle12"  	[(ngModel)]="liaison13" (ngModelChange) = "onChangeliaison13()">
+			</div>
+			<div *ngIf ="option === 'f'">
+				<input type="number" [ngStyle]="circle13" 	[(ngModel)]="liaison14" (ngModelChange) = "onChangeliaison14()">
+				<input type="number" [ngStyle]="circle14"  	[(ngModel)]="liaison15" (ngModelChange) = "onChangeliaison15()">
+			</div>
+			<div *ngIf ="option === 'g'">
+				<input type="number" [ngStyle]="circle15" 	[(ngModel)]="liaison16" (ngModelChange) = "onChangeliaison16()">
+				<input type="number" [ngStyle]="circle16"  	[(ngModel)]="liaison17" (ngModelChange) = "onChangeliaison17()">
+			</div>
+			<canvas id="canvas" width="1000" height="1000">
+				Votre navigateur ne supporte pas les canvas, veuillez le mettre à jour.
+			</canvas>
+		</div>
+	</div>
+</div>

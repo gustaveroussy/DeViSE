@@ -1,0 +1,10 @@
+/.settings/
+/.vscode/
+/dist/
+/nodes_modules/
+/target/
+/temp/
+/.classpath
+/.editorconfig
+/.project
+/node_modules/
