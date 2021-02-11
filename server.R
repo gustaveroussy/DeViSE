@@ -72,7 +72,7 @@ shinyServer(
     
     observeEvent(input$.login,{
       output$log_files=renderUI(br())
-      logg=fromJSON(paste0("http://31.10.13.26:8080/Authentification/api/User?login=",input$.username,"&password=",input$.password))
+      logg=fromJSON(paste0("http://vls-odin.intra.igr.fr:8086/Authentification/api/User?login=",input$.username,"&password=",input$.password))
       
       if(logg$identification=="Successful identification"){
           
@@ -148,14 +148,14 @@ shinyServer(
       icons[!runs$name %in% analysislist]="telegram-plane"
       
       ################################
-      runs$`Progress (%)`=sapply(runs$name,FUN = getRunStatus)
-      runs$Advanced=actionButtonInputs( len = nrow(runs),
-                                        id = 'button_',
-                                        label = label_btns,
-                                        class_btns = class_btns,
-                                        icons = icons,
-                                        onclick = 'Shiny.onInputChange(\"select_button_advanced\",  this.id+"_"+Math.random())'
-                                      )
+      #runs$`Progress (%)`=NA#sapply(runs$name,FUN = getRunStatus)
+      # runs$Advanced=actionButtonInputs( len = nrow(runs),
+      #                                   id = 'button_',
+      #                                   label = label_btns,
+      #                                   class_btns = class_btns,
+      #                                   icons = icons,
+      #                                   onclick = 'Shiny.onInputChange(\"select_button_advanced\",  this.id+"_"+Math.random())'
+      #                                 )
       indexs=which(runs$Analysis != "launched")
       
       class_btns=rep("",nrow(runs))
@@ -193,14 +193,14 @@ shinyServer(
         formatStyle(2,  color = 'black', backgroundColor = '#d5e5ef',fontWeight = 'bold')  %>%
         
         formatStyle("Raw data",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("available","not available"), c("#83a89a","#ba6262")))  %>%
-        formatStyle("Analysis",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#9c96cc","#efbd7f"))) %>% 
-        formatStyle("Progress (%)",
-                      background = styleColorBar(c(100,0), '#adffb9'),
-                      backgroundSize = '98% 88%',
-                      fontWeight = 'bold',
-                      color = "#c42b2b",
-                      backgroundRepeat = 'no-repeat',
-                      backgroundPosition = 'center')
+        formatStyle("Analysis",color = "black",fontWeight = 'bold', backgroundColor = styleEqual(c("launched","Waiting"), c("#9c96cc","#efbd7f"))) #%>% 
+        # formatStyle("Progress (%)",
+        #               background = styleColorBar(c(100,0), '#adffb9'),
+        #               backgroundSize = '98% 88%',
+        #               fontWeight = 'bold',
+        #               color = "#c42b2b",
+        #               backgroundRepeat = 'no-repeat',
+        #               backgroundPosition = 'center')
     })
     
     

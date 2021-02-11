@@ -5,9 +5,9 @@ genomePath=paste0(getwd(),"/","data/appData/public_annotation/gencodeV19_dna.fa"
 col.names_junc=c( "chrom" ,
                   "start",
                   "end",
+                  "strand",
                   "name",
                   "score" ,
-                  "strand",
                   "splice_site",
                   "acceptors_skipped",
                   "exons_skipped",
@@ -184,6 +184,8 @@ aggregate_junctions=function(samplesList,type="ALL"){
     s=strsplit(i,"/")[[1]][2]
     
     junction=getJunctionsFromSample(sample = s,analysis = r,type = type)
+    colnames(junction)[ colnames(junction)=="gene_names"]="genes"
+    print(col.names_junc)
     if(length(junction)!=1){
       junction=junction[,col.names_junc]
       junction$score=as.numeric(as.character(junction$score))
