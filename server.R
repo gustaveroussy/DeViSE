@@ -391,7 +391,7 @@ shinyServer(
            
          }else{
  
-         junctions=aggregate_junctions(samplesList = input$select_samples_junc,type = input$type_junctions)
+         junctions=aggregate_junctions(samplesList = input$select_samples_junc,type = "ALL")
          analyse$junctions=junctions$junctions.tab
          analyse$junctions=analyse$junctions[analyse$junctions$gene!="NA",]
          analyse$junctions=analyse$junctions[!is.na(analyse$junctions$gene),]

@@ -160,11 +160,13 @@ body <-  dashboardBody(
                   width = 12 ,
                   column(width =12,
                     column(width = 6,selectInput(inputId ="select_analysis",label = "Select one ore multiple analysis",multiple = T,choices = getAnalysisList())),
-                    column(width = 6,selectInput(inputId ="type_junctions",label = "Select a type of results",multiple = F,choices =c("FILTERED","ALL")))
+                    column(width = 6,numericInput(inputId ="cuttof_depth",label = "Minimum number of reads to keep a junction",value=25, min = 0, max = NA, step = 1))
+                    
+                      #  column(width = 6,selectInput(inputId ="type_junctions",label = "Select a type of results",multiple = F,choices =c("FILTERED","ALL")))
                   ),
                   column(width =12,
-                  column(width = 6,selectInput(inputId ="select_samples_junc",label = "Select samples",multiple = T,choices = "")),
-                  column(width = 6,numericInput(inputId ="cuttof_depth",label = "Minimum number of reads to keep a junction",value=25, min = 0, max = NA, step = 1))
+                  column(width = 6,selectInput(inputId ="select_samples_junc",label = "Select samples",multiple = T,choices = ""))
+                  # column(width = 6,numericInput(inputId ="cuttof_depth",label = "Minimum number of reads to keep a junction",value=25, min = 0, max = NA, step = 1))
                   ),       
                   
                   actionButton(inputId = "View_analysis_btn","Submit",icon = icon("run")),
