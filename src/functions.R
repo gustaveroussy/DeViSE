@@ -422,7 +422,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    for(s in samples){
      
      y_tickvals=c(y_tickvals,my_max(y_tickvals)+space_between_samples)
-     y_ticktext=c(y_ticktext,paste0("<b>[",s,"]: </b>",principalTranscript))
+     y_ticktext=c(y_ticktext,paste0("<b>[",unlist(strsplit(s,"/"))[2],"]: </b>",principalTranscript))
      y_names=c(y_names,s)
    }
    
