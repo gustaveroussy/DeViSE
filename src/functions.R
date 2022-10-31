@@ -7,6 +7,8 @@ col.names_junc=c( "chrom" ,
                   "end",
                   "strand",
                   "name",
+                  "start_j",
+                  "end_j",
                   "score" ,
                   "splice_site",
                   "acceptors_skipped",
@@ -342,7 +344,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                      End=junctions$end,
                      Depth=junctions[[sample]],
                      Transcript=junctions$transcripts,
-                     status=junctions$`known junction`,
+                     status=junctions$`known_junction`,
                      acceptors_skipped=junctions$`acceptors skipped`,
                      exons_skipped=junctions$`exons skipped`,
                      donors_skipped=junctions$`donors skipped`,
@@ -373,10 +375,8 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
    
    ###Preparation --------------------------------------------------------------------------------
    exonsTranscripts=get_exonFrom_transcript(exonGTF$default,gene_transcript,gene)
-   exonsUnion=get_exonFrom_transcript(exonGTF$union,gene_transcript,gene)
-   exonsUnion$transcript="Merged_transcripts"
-   exonsTranscripts=rbind(exonsTranscripts,exonsUnion)
    exonsTranscripts=exonsTranscripts[exonsTranscripts$transcript %in% c(transcriptList,principalTranscript), ]
+   # print(exonsTranscripts)
    exonsTranscripts=exonsTranscripts[order(exonsTranscripts$start),]
    junctions=base::sapply(samples,get_junctionFromExons,junc=junctions[!is.na(junctions$genes),],gene=gene,cutoff=cutoff_depth,USE.NAMES = T,simplify = F)
    
@@ -472,6 +472,7 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
        
      } 
      
+     print(exons)
      break_points=c(break_points,exons$start,exons$end)
      
      p=add_segments(p ,
@@ -483,9 +484,9 @@ get_exonFromGTF=function(gtf="data/appData/public_annotation/gencodeV19.gtf"){
                     legendgroup=t,
                     showlegend = F)
      
-    
+     # print(nrow(exons))
      for (i in 1:nrow(exons)) {
-       
+       print(i)
        if(exons$strand[1]=="-"){
          num_exon=nrow(exons)-i+1
        }else{

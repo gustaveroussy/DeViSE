@@ -25,7 +25,7 @@ GTFs=reactiveValues(values=NULL)
 RUNS=reactiveValues(values=NULL)
 analyse=reactiveValues(name=NULL,junctions=NULL,current_transcript=NULL)
 finished_analysis=reactiveValues(name=NULL)
-hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons_default.rds"),
+hg19_exons=list(default=readRDS("data/appData/public_annotation/gencodeV19_exons_default-V3.rds"),
                 union=readRDS("data/appData/public_annotation/gencodeV19_exons_union.rds"))
 ###### End reactive Values ---------------------------------------------------------------------------------------------
 
@@ -401,7 +401,7 @@ shinyServer(
              analyse$junctions=analyse$junctions[analyse$junctions$maxReads_AllSamples>=input$cuttof_depth,]
              colnames(analyse$junctions)[1:11]=str_replace_all(colnames(analyse$junctions),pattern = "_",replacement = " ")[1:11]
              updateSelectInput(session,inputId = "select_gene",choices = unique(analyse$junctions$genes[!str_detect(analyse$junctions$genes,pattern = ",")]))
-             updateSelectInput(session,inputId = "select_samples",choices = colnames(analyse$junctions)[13:(ncol(analyse$junctions)-1)])
+             updateSelectInput(session,inputId = "select_samples",choices = colnames(analyse$junctions)[15:(ncol(analyse$junctions)-1)])
              shinyjs::showElement("results_output")
              
          }else{
@@ -429,8 +429,8 @@ shinyServer(
        })
   
        output$DT_All_samples=renderDataTable({
-         
-         datatable(analyse$junctions[,-12],
+         print(colnames(analyse$junctions))
+         datatable(analyse$junctions[,-14],
                    selection = 'single',
                    escape = FALSE,
                    filter = list(position = 'top',
@@ -456,7 +456,7 @@ shinyServer(
            formatStyle(9,  color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
            formatStyle(11, color = 'black', backgroundColor = 'rgb(244, 247, 249)')  %>%
            
-           formatStyle("known junction",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("known","unknown"), c("#83a89a","#ba6262"))) 
+           formatStyle("known_junction",color = "white",fontWeight = 'bold', backgroundColor = styleEqual(c("known","unknown"), c("#83a89a","#ba6262"))) 
          
        })
        
@@ -466,12 +466,12 @@ shinyServer(
        if(input$select_gene!=""){
         transcripts=analyse$junctions$transcripts[analyse$junctions$genes==input$select_gene]
         transcripts=as.character(transcripts[!is.na(transcripts)])
-        
         if(length(transcripts>0)){
           transcripts=unlist(strsplit(transcripts,","))
+          transcripts=transcripts[str_detect(transcripts,"NM_")]
           updateSelectInput(session,
                             inputId = "select_principal_transcript",
-                            choices = c("Merged_transcripts",transcripts),
+                            choices = transcripts,
                             selected = "")
         }
       }
@@ -487,6 +487,7 @@ shinyServer(
         if(length(transcripts>0)){
           
           transcripts=unlist(strsplit(transcripts,","))
+          transcripts=transcripts[str_detect(transcripts,"NM_")]
           updateSelectInput(session,
                             inputId = "select_transcript",
                             choices = transcripts)
@@ -568,8 +569,8 @@ shinyServer(
         
         output$message_plot=renderText("")
         junctions=analyse$junctions
-        junctions$`known junction`=as.character(junctions$`known junction`)
-        junctions$`known junction`[isolate(input$DT_All_samples_rows_selected)]=paste0(junctions$`known junction`[isolate(input$DT_All_samples_rows_selected)],"(selected)")
+        junctions$`known_junction`=as.character(junctions$`known_junction`)
+        junctions$`known_junction`[isolate(input$DT_All_samples_rows_selected)]=paste0(junctions$`known_junction`[isolate(input$DT_All_samples_rows_selected)],"(selected)")
         mutations=NULL
         
         # try({mutations=hot_to_r(input$mutations_rhandontable)})

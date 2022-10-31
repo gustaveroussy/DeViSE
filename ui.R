@@ -110,7 +110,7 @@ body <-  dashboardBody(
   ############ end modals- ---------------------------------------------------------------------------------------------
   
   useShinyjs(),
-  extendShinyjs(text = jsResetCode),
+  #extendShinyjs(text = jsResetCode),
   
 
 

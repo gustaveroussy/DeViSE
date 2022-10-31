@@ -1,0 +1,15 @@
+host: "http://flamingo-app-01.intra.igr.fr:8080/pirest-legacy/api/devise"
+runList: "/runList"
+analysisList: "/analysisList"
+sample_listFromAnalysis: "/sample_listFromAnalysis"# ?analysis=run_test"
+fileList: "/fileList"#?run=run_test&endwith=.fastq.gz
+logList: "/logList" #?analysis=run_test&sample=42814&endwith=log
+download_log_file: "/download_log_file" #?analysis=analysis_test&sample=42814&logFile=..
+getJunctions: "/getJunctions"# ?analysis=run_test&sample=42814
+getJobStatus: "/getJobStatus" #?job_id=93337.bright70.cm.cluster
+killJob: "/killJob" #?job_id=93337.bright70.cm.cluster
+download_all_junctionsFile: "/download_all_junctionsFile"#?analysis=run_test&sample=42814
+download_filtered_junctionsFile: "/download_filtered_junctionsFile"#?analysis=run_test&sample=42814
+run_devise_pipeline: "/run_devise_pipeline"
+removeAnalysis: "/removeAnalysis"
+getTimestamp: "/getTimestamp"

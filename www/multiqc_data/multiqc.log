@@ -1,0 +1,33 @@
+[2022-10-24 14:55:57,888] multiqc                                            [DEBUG  ]  This is MultiQC v1.13
+[2022-10-24 14:55:57,890] multiqc                                            [DEBUG  ]  SAV - Updating config
+[2022-10-24 14:55:57,895] multiqc                                            [DEBUG  ]  Command used: /home/svc_hpc_biopath@intra.igr.fr/.conda/envs/py36/bin/multiqc .
+[2022-10-24 14:55:58,158] multiqc                                            [DEBUG  ]  Latest MultiQC version is v1.13
+[2022-10-24 14:55:58,159] multiqc                                            [DEBUG  ]  Working dir : /mnt/beegfs/scratch/svc_hpc_biopath/multiqc_test/220209_NS500197_0873_AHH33LAFX3
+[2022-10-24 14:55:58,159] multiqc                                            [DEBUG  ]  Template    : default
+[2022-10-24 14:55:58,159] multiqc                                            [DEBUG  ]  Running Python 3.6.13 |Anaconda, Inc.| (default, Jun  4 2021, 14:25:59)  [GCC 7.5.0]
+[2022-10-24 14:55:58,160] multiqc                                            [DEBUG  ]  Analysing modules: SAV, custom_content, ccs, ngsderive, purple, conpair, lima, peddy, somalier, methylQA, mosdepth, phantompeakqualtools, qualimap, preseq, quast, qorts, rna_seqc, rockhopper, rsem, rseqc, busco, bustools, goleft_indexcov, gffcompare, disambiguate, supernova, deeptools, sargasso, verifybamid, mirtrace, happy, mirtop, sambamba, homer, hops, macs2, theta2, snpeff, gatk, htseq, bcftools, featureCounts, fgbio, dragen, dedup, pbmarkdup, damageprofiler, biobambam2, jcvi, mtnucratio, picard, vep, sentieon, prokka, qc3C, nanostat, samblaster, samtools, sexdeterrmine, eigenstratdatabasetools, bamtools, jellyfish, vcftools, longranger, stacks, varscan2, snippy, bbmap, bismark, biscuit, hicexplorer, hicup, hicpro, salmon, kallisto, slamdunk, star, hisat2, tophat, bowtie2, bowtie1, snpsplit, odgi, pangolin, kat, leehom, adapterRemoval, clipandmerge, cutadapt, flexbar, kaiju, kraken, malt, trimmomatic, sickle, skewer, sortmerna, biobloomtools, fastq_screen, afterqc, fastp, fastqc, pychopper, pycoqc, minionqc, multivcfanalyzer, clusterflow, checkqc, bcl2fastq, bclconvert, ivar, flash, seqyclean, optitype, whatshap
+[2022-10-24 14:55:58,161] multiqc                                            [DEBUG  ]  Using temporary directory for creating report: /tmp/tmptn8e9jn7
+[2022-10-24 14:55:58,182] multiqc                                            [INFO   ]  Search path : /mnt/beegfs/scratch/svc_hpc_biopath/multiqc_test/220209_NS500197_0873_AHH33LAFX3
+[2022-10-24 14:55:58,196] multiqc                                            [DEBUG  ]  Ignored 2 search patterns as didn't match running modules.
+[2022-10-24 14:56:40,351] multiqc                                            [DEBUG  ]  Summary of files that were skipped by the search: [skipped_file_contents_search_errors: 2266] // [skipped_module_specific_max_filesize: 461] // [skipped_no_match: 150] // [skipped_ignore_pattern: 56] // [skipped_directory_fn_ignore_dirs: 4] // [skipped_filesize_limit: 2]
+[2022-10-24 14:56:42,230] multiqc.plots.bargraph                             [DEBUG  ]  Using matplotlib version 3.3.4
+[2022-10-24 14:56:42,233] multiqc.plots.linegraph                            [DEBUG  ]  Using matplotlib version 3.3.4
+[2022-10-24 14:56:42,242] multiqc                                            [INFO   ]  Loading Run Info
+[2022-10-24 14:56:42,252] multiqc                                            [INFO   ]  Loading Run Metrics
+[2022-10-24 14:56:44,002] multiqc                                            [INFO   ]  Gathering Read summary metrics
+[2022-10-24 14:56:44,875] multiqc                                            [INFO   ]  Gathering Lane summary metrics
+[2022-10-24 14:56:45,432] multiqc                                            [INFO   ]  Generating 'Clusters/Lane' plot
+[2022-10-24 14:56:45,487] multiqc                                            [INFO   ]  Generating 'Qscore Heatmap' plot
+[2022-10-24 14:56:45,508] multiqc                                            [INFO   ]  Generating 'Qscore Histogram' plot
+[2022-10-24 14:56:45,528] multiqc                                            [INFO   ]  Gathering Imaging metrics
+[2022-10-24 14:57:07,355] multiqc                                            [INFO   ]  Generating 'Intensity per Cycle' plot
+[2022-10-24 14:57:07,359] multiqc                                            [INFO   ]  Generating '% PF vs % Occupied' plot
+[2022-10-24 14:57:07,379] multiqc                                            [DEBUG  ]  No samples found: custom_content
+[2022-10-24 14:57:08,501] multiqc.modules.fastqc.fastqc                      [INFO   ]  Found 16 reports
+[2022-10-24 14:57:09,040] multiqc.modules.bclconvert.bclconvert              [ERROR  ]  Different amount of Demux Stats files and RunInfoXML files found: '0' and '1'
+[2022-10-24 14:57:09,041] multiqc                                            [DEBUG  ]  No samples found: bclconvert
+[2022-10-24 14:57:09,174] multiqc                                            [INFO   ]  Compressing plot data
+[2022-10-24 14:57:11,676] multiqc                                            [INFO   ]  Report      : multiqc_report.html
+[2022-10-24 14:57:11,677] multiqc                                            [INFO   ]  Data        : multiqc_data
+[2022-10-24 14:57:11,677] multiqc                                            [DEBUG  ]  Moving data file from '/tmp/tmptn8e9jn7/multiqc_data' to '/mnt/beegfs/scratch/svc_hpc_biopath/multiqc_test/220209_NS500197_0873_AHH33LAFX3/multiqc_data'
+[2022-10-24 14:57:12,370] multiqc                                            [INFO   ]  MultiQC complete

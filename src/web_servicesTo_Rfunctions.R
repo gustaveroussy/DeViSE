@@ -45,7 +45,7 @@ downloadLogFile=function(analysis,sample,logFile,from="rTerminal"){
 }
 
 getJunctionsFromSample=function(sample,analysis,type="STATUS"){
-  
+  print(paste0(web_services$host,web_services$getJunctions,"?analysis=",analysis,"&sample=",sample))
   junc=fromJSON(paste0(web_services$host,web_services$getJunctions,"?analysis=",analysis,"&sample=",sample))
   
   if(type=="ALL")
